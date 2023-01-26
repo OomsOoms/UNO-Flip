@@ -1,32 +1,45 @@
-from dict import *
+from cards import *
 
 
+# Create a Player class
 class Player:
     def __init__(self, deck):
         self.hand = deck.deal_hand()
 
 
-deck = Deck()
+class Game:
+    def __init__(self):
+        self.deck = Deck(self)
+        self.players = {
+            "P1": Player(self.deck),
+            "P2": Player(self.deck),
+            "P3": Player(self.deck)
+        }
 
-players = {
-    "P1": [],
-    "P2": []
-}
+    def deal_hands(self):
+        for player in self.players.values():
+            player.hand = self.deck.deal_hand()
+
+    def check_winner(self, player):
+        return len(player.hand) == 0
+
+    def start_card(self):
+        while True:
+            temp = self.deck.pick_card()
+            self.deck.discard.append(temp)
+            print(temp.light.type)
+
+            if temp.light.type == "Number":
+                break
+
+    def play_game(self):
+        self.deal_hands()
+        self.start_card()
+
+        player = self.players["P1"]
+
+        while not self.check_winner(player):
+            pass
 
 
-for x in players:
-    players[x] = Player(deck)
-
-while True:
-
-    card = deck.pick_card()
-    print(card.light)
-    input()
-
-    deck.discard.append(card)
-
-    while card.type != "number":
-        card = deck.pick_card()
-        print(card)
-
-        deck.discard.append(card)
+Game().play_game()
