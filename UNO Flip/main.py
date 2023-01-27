@@ -3,43 +3,93 @@ from cards import *
 
 # Create a Player class
 class Player:
-    def __init__(self, deck):
-        self.hand = deck.deal_hand()
+    def __init__(self, game):
+        # Assign the player a hand of cards from the deck
+        self.game = game
+        self.hand = game.deck.deal_hand()
+
+    def get_playable_cards(self, discard_card, hand):
+        # Check which side of the card is facing up (light or dark) based on the direction of the game
+        sides = (discard_card.light.side, discard_card.dark.side)
+        side_to_check = set(
+            sides[::self.game.flip][0])
+        # Get a list of cards that can be played based on the side of the discard card that is facing up
+
+        playable_cards = [card for card in hand if side_to_check.intersection(
+            set([card.light.side, card.dark.side][::self.game.flip][0]))]
+        # Return the list of playable cards
+        return playable_cards
 
 
 class Game:
     def __init__(self):
+        # Create a new deck of cards and assign it to the game
         self.deck = Deck(self)
+        # Create 3 players and assign them to the game
         self.players = {
-            "P1": Player(self.deck),
-            "P2": Player(self.deck),
-            "P3": Player(self.deck)
+            "P1": Player(self),
+            "P2": Player(self),
+            "P3": Player(self)
         }
 
+        # Set the direction of the game to normal (1) or reverse (-1)
+        self.direction = 1  # 1 for normal, -1 for reverse
+
+        self.flip = -1  # 1 for light, 1 for dark
+
     def deal_hands(self):
+        # Deal a hand of cards to all players
         for player in self.players.values():
             player.hand = self.deck.deal_hand()
 
     def check_winner(self, player):
+        # Check if the player has won by checking if their hand is empty
         return len(player.hand) == 0
 
     def start_card(self):
+        # Pick up a card and check if it's a number card
         while True:
             temp = self.deck.pick_card()
             self.deck.discard.append(temp)
-            print(temp.light.type)
 
             if temp.light.type == "Number":
                 break
 
     def play_game(self):
+        # Deal initial hands to all players
         self.deal_hands()
+        # Pick up a card and check if it's a number card
         self.start_card()
 
-        player = self.players["P1"]
+        players_list = list(self.players.keys())
 
-        while not self.check_winner(player):
-            pass
+        # Create an index variable to keep track of the current player
+        current_player_index = 0
+
+        # Main game loop
+        while True:
+            # Get the current player name and object
+            current_player_name = players_list[current_player_index]  # String
+            current_player = self.players[current_player_name]  # Player object
+
+            # get the last card in the discard pile. self.flip == 1 when light and -1 when dark. Then combares all cards to the top card and returns all the playable ones.
+            discard_card = self.deck.discard[-1]
+
+            playable_cards = current_player.get_playable_cards(
+                discard_card, current_player.hand)
+
+            # Player choices go here...
+
+            # Check if the current player has won at the end of their go
+            if self.check_winner(current_player):
+                print(f"Player {current_player_name} wins!")
+                break
+
+            # Update the current player index based on the direction of the game. Modulo operator is used to keep the index within the bounds of the players_list.
+            current_player_index = (
+                current_player_index + self.direction) % len(players_list)
+
+            input()
 
 
 Game().play_game()

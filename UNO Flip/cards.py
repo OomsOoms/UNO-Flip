@@ -25,7 +25,7 @@ class Number(Side):
     def __init__(self, side):
         super().__init__(side, "Number")
 
-    def behaviour(self):
+    def behaviour(self, game):
         pass
 
 
@@ -34,7 +34,8 @@ class Flip(Side):
         super().__init__(side, "Flip")
 
     def behaviour(self, game):
-        game.deck.flip *= -1
+        game.flip *= -1
+        game.deck.discard = game.deck.discard[::-1]
 
 
 class DrawOne(Side):
@@ -50,7 +51,7 @@ class Reverse(Side):
         super().__init__(side, "Reverse")
 
     def behaviour(self, game):
-        pass
+        game.direction *= -1
 
 
 class Wild(Side):
@@ -98,8 +99,6 @@ class Deck:
 
     def __init__(self, game):
         self.game = game
-
-        self.flip = 1
 
         self.discard = []
 
