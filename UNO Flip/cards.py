@@ -59,7 +59,8 @@ class Wild(Side):
         super().__init__(side, "Wild")
 
     def behaviour(self, game):
-        pass
+        colour = input("Pick a colour")
+        self.side = [colour]
 
 
 class WildDrawTwo(Side):
@@ -67,7 +68,8 @@ class WildDrawTwo(Side):
         super().__init__(side, "WildDrawTwo")
 
     def behaviour(self, game):
-        pass
+        colour = input("Pick a colour ")
+        self.side = [colour]
 
 
 class DrawFive(Side):
@@ -257,6 +259,8 @@ class Deck:
     def check_discard(self):
         return self.discard[self.flip]
 
-    def place(self, card):
-        card.behaviour(self.game)
+    def place_card(self, card):
+        sides = (card.light, card.dark)
+        side = sides[::self.game.flip][0]
+        side.behaviour(self.game)
         self.discard.append(card)
