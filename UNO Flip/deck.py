@@ -85,7 +85,7 @@ class SkipEveryone(Side):
         super().__init__(side, "SkipEveryone")
 
     def behaviour(self, game):
-        pass
+        game.prerequisite = self.type
 
 
 class WildDrawColour(Side):
@@ -93,7 +93,10 @@ class WildDrawColour(Side):
         super().__init__(side, "WildDrawColour")
 
     def behaviour(self, game):
-        pass
+        game.prerequisite = self.type
+        colour = input("Pick a colour ")
+        self.side = [colour]
+        return colour
 
 
 class Skip(Side):
@@ -101,7 +104,9 @@ class Skip(Side):
         super().__init__(side, "Skip")
 
     def behaviour(self, game):
-        pass
+        print(game.current_player_index)
+        print(game.direction)
+        game.current_player_index += 2(game.direction)
 
 
 # Create a Deck class
