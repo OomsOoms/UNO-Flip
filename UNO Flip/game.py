@@ -70,27 +70,14 @@ class Game:
         # Main game loop
         while True:
             # Get the current player name and object
-            current_player_name = players_list[current_player_index]  # String
-            current_player = self.players[current_player_name]  # Player object
+            self.current_player_name = players_list[current_player_index]  # String
+            current_player = self.players[self.current_player_name]  # Player object
 
             # Get the last card in the discard pile. self.flip == 1 when light and -1 when dark. Then combares all cards to the top card and returns all the playable ones.
             discard_card = self.deck.discard[-1]
 
             playable_cards = current_player.get_playable_cards(
                 discard_card, current_player.hand)
-
-            # Command-line interface
-            print(f"\nPlayer: {current_player_name}")
-            print(
-                f"Discard pile: {(None, discard_card.light.side, discard_card.dark.side)[self.flip]}")
-
-            # Prints the light or dark side of the players hand depending on self.flip
-            print(
-                f"Hand: {[set((x.light.side, x.dark.side)[::self.flip][0]) for x in current_player.hand]}")
-
-            # Prints all of the playable cards where at least one item in card.light/dark.side is a subset of the discard
-            print(
-                f"Playable cards: {[set((x.light.side, x.dark.side)[::self.flip][0]) for x in playable_cards]}")
 
             card_index = input("Position of card to play or p to pick up ")
 
@@ -100,13 +87,9 @@ class Game:
                 self.deck.place_card(playable_cards[int(card_index)-1])
                 current_player.hand.remove(playable_cards[int(card_index)-1])
 
-            # Prints the light or dark side of the players hand depending on self.flip after their turn
-            print([set((x.light.side, x.dark.side)[::self.flip][0])
-                   for x in current_player.hand])
-
-            # Check if the current player has won at the end of their go
+            # Win condition
             if self.check_winner(current_player):
-                print(f"Player {current_player_name} wins!")
+                print(f"Player {self.current_player_name} wins!")
                 break
 
             # Update the current player index based on the direction of the game. Modulo operator is used to keep the index within the bounds of the players_list.
