@@ -8,19 +8,6 @@ class Player:
         self.game = game
         self.hand = game.deck.deal_hand()
 
-    def get_playable_cards(self, discard_card, hand):
-        # Check which side of the card is facing up (light or dark) based on the direction of the game
-        sides = (discard_card.light.side, discard_card.dark.side)
-        side_to_check = set(
-            sides[::self.game.flip][0])
-
-        # Get a list of cards that can be played based on the side of the discard card that is facing up
-        playable_cards = [card for card in hand if side_to_check.intersection(
-            set([card.light.side, card.dark.side][::self.game.flip][0])) or set([card.light.side, card.dark.side][::self.game.flip][0]) == set(["Black"])]
-
-        # Return the list of playable cards
-        return playable_cards
-
 
 class Game:
     def __init__(self):
@@ -62,19 +49,28 @@ class Game:
         # Pick up a card and check if it's a number card
         self.start_card()
 
-        players_list = list(self.players.keys())
+        self.players_list = list(self.players.keys())
 
         # Create an index variable to keep track of the current player, starts at -1 becuase of prerequisites
         self.current_player_index = -1
 
         self.prerequisite = None
 
+        self.num_pickup = 0
+
         # Main game loop
         while True:
+            # Get the last card in the discard pile. self.flip == 1 when light and -1 when dark. Then combares all cards to the top card and returns all the playable ones.
+            discard_card = self.deck.discard[-1]
+
             if self.prerequisite != "SkipEveryone":
                 # Update the current player index based on the direction of the game. Modulo operator is used to keep the index within the bounds of the players_list.
                 self.current_player_index = (
-                    self.current_player_index + self.direction) % len(players_list)
+                    self.current_player_index + self.direction) % len(self.players_list)
+
+            # Get the current player name and object
+            self.current_player_name = self.players_list[self.current_player_index]  # String
+            current_player = self.players[self.current_player_name]  # Player object
                 
             if self.prerequisite == "WildDrawColour":
                 print(WildDrawColour)
@@ -92,19 +88,26 @@ class Game:
                     print(colour.side)
                     if colour.side[-1] == discard_colour.side[-1]:
                         break
-                
-            self.prerequisite = None
+            
+            # Check which side of the card is facing up (light or dark) based on the direction of the game
+            sides = (discard_card.light.side, discard_card.dark.side)
+            side_to_check = sides[::self.flip][0]
             
 
-            # Get the current player name and object
-            self.current_player_name = players_list[self.current_player_index]  # String
-            current_player = self.players[self.current_player_name]  # Player object
+            if self.num_pickup != 0:
+                print("pick up")
+                # Get a list of cards that can be played based on the side of the discard card that is facing up
+                playable_cards = [card for card in current_player.hand if "Draw" in [card.light.type, card.dark.type][::self.flip][0]]
+                self.num_pickup = 0
 
-            # Get the last card in the discard pile. self.flip == 1 when light and -1 when dark. Then combares all cards to the top card and returns all the playable ones.
-            discard_card = self.deck.discard[-1]
+            else:
+                print("not pickup")
+                # Get a list of cards that can be played based on the side of the discard card that is facing up
+                playable_cards = [card for card in current_player.hand if set(side_to_check).intersection(
+                    set([card.light.side, card.dark.side][::self.flip][0])) or [card.light.side, card.dark.side][::self.flip][0] == [None]]
 
-            playable_cards = current_player.get_playable_cards(
-                discard_card, current_player.hand)
+            self.prerequisite = None
+        
             
             ###
             ###
@@ -116,28 +119,24 @@ class Game:
 
             # Prints the light or dark side of the players hand depending on self.flip
             print(
-                f"Hand: {[set((x.light.side, x.dark.side)[::self.flip][0]) for x in current_player.hand]}")
+                f"Hand: {[(x.light.side, x.dark.side)[::self.flip][0] for x in current_player.hand]}")
 
             # Prints all of the playable cards where at least one item in card.light/dark.side is a subset of the discard
             print(
-                f"Playable cards: {[set((x.light.side, x.dark.side)[::self.flip][0]) for x in playable_cards]}")
+                f"Playable cards: {[(x.light.side, x.dark.side)[::self.flip][0] for x in playable_cards]}")
             
             ###
             ###
             ###
 
-            card_index = input("Position of card to play or p to pick up ")
-            try:
-                print(playable_cards[int(card_index)-1].light.type)
-                print(playable_cards[int(card_index)-1].dark.type)
-            except:
-                pass
 
-            if card_index == "p":
+            player_choice = input("Position of card to play or p to pick up ")
+
+            if player_choice == "p":
                 current_player.hand.append(self.deck.pick_card())
             else:
-                self.deck.place_card(playable_cards[int(card_index)-1])
-                current_player.hand.remove(playable_cards[int(card_index)-1])
+                self.deck.place_card(playable_cards[int(player_choice)-1])
+                current_player.hand.remove(playable_cards[int(player_choice)-1])
 
             # Win condition
             if self.check_winner(current_player):
