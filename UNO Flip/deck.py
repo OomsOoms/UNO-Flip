@@ -59,7 +59,7 @@ class Wild(Side):
         super().__init__(side, "Wild")
 
     def behaviour(self, game):
-        colour = input("Pick a colour")
+        colour = input("Pick a colour ")
         self.side = [colour]
 
 
@@ -155,7 +155,7 @@ class Deck:
             Card(Number(["8", "Red"]), Reverse(["Reverse"< "Purple"])),
             Card(Number(["9", "Red"]), Number(["5", "Purple"])),
             Card(Number(["9", "Red"]), Reverse(["Reverse", "Turquoise"])),
-
+        
             Card(Number(["1", "Blue"]), SkipEveryone(["SkipEveryone", "Purple"])),
             Card(Number(["1", "Blue"]), SkipEveryone(["SkipEveryone", "Purple"])),
             Card(Number(["2", "Blue"]), Number(["8", "Orange"])),
@@ -254,21 +254,20 @@ class Deck:
 
     # Create a method to pick a card from the deck
     def pick_card(self, game):
-        # pick a random card from the list of cards
-        try:
-            card = random.choice(self.cards)
-            self.cards.remove(card)  # remove the card from the list of cards
-            
-        except IndexError:
-            # Shuffling cards by making new game object 
-            game.deck = Deck(game)
-            self.discard = game.deck.discard
-            game.deck.cards.remove(game.deck.discard)
-            card = random.choice(game.deck.cards)
-            game.deck.cards.remove(card)  # remove the card from the list of cards
+        # Shuffles cards if the duck is empty
+        if len(self.cards) == 0:
+            print(len(self.cards))
+            print(len(self.discard))
+            print("Shuffling discard pile")
+            # Switch the deck and discard pile, append the top card of the deck to the discard pile
+            self.cards, self.discard = self.discard, self.cards
+            self.discard.append(self.cards.pop())
 
+
+
+        card = random.choice(self.cards)
+        self.cards.remove(card)  # remove the card from the list of cards
         
-
         return card
 
     def check_discard(self):
@@ -277,5 +276,5 @@ class Deck:
     def place_card(self, card):
         sides = (card.light, card.dark)
         side = sides[::self.game.flip][0]
-        side.behaviour(self.game)
         self.discard.append(card)
+        side.behaviour(self.game)
