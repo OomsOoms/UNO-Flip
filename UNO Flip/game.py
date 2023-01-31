@@ -22,7 +22,7 @@ class Game:
         # Set the direction of the game to normal (1) or reverse (-1)
         self.direction = 1  # 1 for normal, -1 for reverse
 
-        self.flip = 1  # 1 for light, -1 for dark
+        self.flip = -1  # 1 for light, -1 for dark
 
     def deal_hands(self):
         # Deal a hand of cards to all players
@@ -36,7 +36,7 @@ class Game:
     def start_card(self):
         # Pick up a card and check if it's a number card
         while True:
-            temp = self.deck.pick_card()
+            temp = self.deck.pick_card(self)
             print(temp.light.side)
             self.deck.discard.append(temp)
 
@@ -71,41 +71,55 @@ class Game:
             # Get the current player name and object
             self.current_player_name = self.players_list[self.current_player_index]  # String
             current_player = self.players[self.current_player_name]  # Player object
-                
-            if self.prerequisite == "WildDrawColour":
-                print(WildDrawColour)
-                while True:
-                    card = self.deck.pick_card()
-                    sides = (card.light, card.dark)
-                    colour = sides[::self.flip][0]
-
-                    sides = (discard_card.light, discard_card.dark)
-                    discard_colour = sides[::self.flip][0]
-                    
-                    current_player.hand.append(card)
-
-                    print(discard_colour.side) 
-                    print(colour.side)
-                    if colour.side[-1] == discard_colour.side[-1]:
-                        break
             
+            # Picks up cards until the colour specified is picked up
+            if self.prerequisite == "WildDrawColour":
+                while True:
+                    card = self.deck.pick_card(self)
+
+                    # Card is only available on the dark side
+                    print(card.dark.side[-1])
+                    print(discard_card.dark.side[-1])
+                    if card.dark.side[-1] == discard_card.dark.side[-1]:
+                        break
+
+            continue
+
             # Check which side of the card is facing up (light or dark) based on the direction of the game
             sides = (discard_card.light.side, discard_card.dark.side)
             side_to_check = sides[::self.flip][0]
             
 
-            if self.num_pickup != 0:
-                print("pick up")
-                # Get a list of cards that can be played based on the side of the discard card that is facing up
-                playable_cards = [card for card in current_player.hand if "Draw" in [card.light.type, card.dark.type][::self.flip][0]]
-                self.num_pickup = 0
-
-            else:
-                print("not pickup")
+            if self.num_pickup == 0:
                 # Get a list of cards that can be played based on the side of the discard card that is facing up
                 playable_cards = [card for card in current_player.hand if set(side_to_check).intersection(
-                    set([card.light.side, card.dark.side][::self.flip][0])) or [card.light.side, card.dark.side][::self.flip][0] == [None]]
-
+                    set([card.light.side, card.dark.side][::self.flip][0])) or None == [card.light.side, card.dark.side][::self.flip][0][-1]]
+                
+                if None == [discard_card.light.type, discard_card.dark.type][::self.flip][0][-1]:
+                    playable_cards = current_player.hand
+                    
+            else:
+                # Get a list of cards that can be played based on if they can stack more "Draw" cards
+                playable_cards = []
+                # Draw cards can only be placed when the colour or number is the same or lower
+                for card in current_player.hand:
+                    if "DrawOne" in [card.light.type, card.dark.type][::self.flip][0]:
+                        if "DrawOne" in [discard_card.light.type, discard_card.dark.type][::self.flip][0]:
+                            playable_cards.append(card)
+                    elif "DrawTwo" in [card.light.type, card.dark.type][::self.flip][0]:
+                        if "DrawOne" in [discard_card.light.type, discard_card.dark.type][::self.flip][0] or "DrawTwo" in [discard_card.light.type, discard_card.dark.type][::self.flip][0]:
+                            playable_cards.append(card)
+                    elif "DrawFive" in [card.light.type, card.dark.type][::self.flip][0]:
+                        playable_cards.append(card)
+                
+                # If there is no playable card they pick up
+                if len(playable_cards) == 0:
+                    for i in range(self.num_pickup):
+                        current_player.hand.append(self.deck.pick_card(self))
+                    self.num_pickup = 0
+                    continue
+                
+            # Resets the prerequisite for the next special card placed
             self.prerequisite = None
         
             
@@ -119,24 +133,35 @@ class Game:
 
             # Prints the light or dark side of the players hand depending on self.flip
             print(
-                f"Hand: {[(x.light.side, x.dark.side)[::self.flip][0] for x in current_player.hand]}")
+                f"Hand {len(current_player.hand)}: {[(x.light.side, x.dark.side)[::self.flip][0] for x in current_player.hand]}")
 
             # Prints all of the playable cards where at least one item in card.light/dark.side is a subset of the discard
             print(
                 f"Playable cards: {[(x.light.side, x.dark.side)[::self.flip][0] for x in playable_cards]}")
             
+            ###                        
             ###
             ###
-            ###
+            
+            player_choice = input("Position of card to play or enter to pick up ")
 
-
-            player_choice = input("Position of card to play or p to pick up ")
-
-            if player_choice == "p":
-                current_player.hand.append(self.deck.pick_card())
-            else:
+            if player_choice != "":
                 self.deck.place_card(playable_cards[int(player_choice)-1])
                 current_player.hand.remove(playable_cards[int(player_choice)-1])
+                
+            else:
+                # Pink one card unless there are more pickup stacked
+                for i in range(1 if self.num_pickup < 2 else self.num_pickup):
+                    card = self.deck.pick_card(self)
+                    current_player.hand.append(card)
+
+                    # Check if new card is playable
+                    if set(side_to_check).intersection(set([card.light.side, card.dark.side][::self.flip][0])):
+                        print(card.light.type)
+                        print(card.dark.type)
+                        player_choice = input("enter to place, 1 to keep") # Enter to place, any character to keep
+                        if player_choice == "":
+                            self.deck.place_card(current_player.hand[-1])
 
             # Win condition
             if self.check_winner(current_player):

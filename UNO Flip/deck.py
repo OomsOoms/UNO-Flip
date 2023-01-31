@@ -119,7 +119,7 @@ class Deck:
         # Create a list of cards
         self.cards = [
             Card(Number(["1", "Yellow"]), SkipEveryone(["SkipEveryone", "Pink"])),
-            Card(Number(["1", "Yellow"]), Wild([None])),
+            Card(Number(["1", "Yellow"]), Wild(["Wild", None])),
             Card(Number(["2", "Yellow"]), Number(["1", "Turquoise"])),
             Card(Number(["2", "Yellow"]), Number(["8", "Turquoise"])),
             Card(Number(["3", "Yellow"]), Number(["1", "Purple"])),
@@ -129,7 +129,7 @@ class Deck:
             Card(Number(["5", "Yellow"]), Number(["8", "Turquoise"])),
             Card(Number(["5", "Yellow"]), Number(["9", "Purple"])),
             Card(Number(["6", "Yellow"]), SkipEveryone(["SkipEveryone", "Orange"])),
-            Card(Number(["6", "Yellow"]), WildDrawColour([None])),
+            Card(Number(["6", "Yellow"]), WildDrawColour(["WildDrawColour", None])),
             Card(Number(["7", "Yellow"]), Number(["2", "Orange"])),
             Card(Number(["7", "Yellow"]), Number(["6", "Purple"])),
             Card(Number(["8", "Yellow"]), Number(["1", "Pink"])),
@@ -142,7 +142,7 @@ class Deck:
             Card(Number(["2", "Red"]), DrawFive(["DrawFive", "Purple"])),
             Card(Number(["2", "Red"]), Reverse(["Reverse", "Orange"])),
             Card(Number(["3", "Red"]), Number(["7", "Pink"])),
-            Card(Number(["3", "Red"]), WildDrawColour([None])),
+            Card(Number(["3", "Red"]), WildDrawColour(["WildDrawColour", None])),
             Card(Number(["4", "Red"]), DrawFive(["DrawFive", "Purple"])),
             Card(Number(["4", "Red"]), Flip(["Flip", "Orange"])),
             Card(Number(["5", "Red"]), Number(["2", "Pink"])),
@@ -186,7 +186,7 @@ class Deck:
             Card(Number(["5", "Green"]), Number(["4", "Turquoise"])),
             Card(Number(["5", "Green"]), Number(["7", "Orange"])),
             Card(Number(["6", "Green"]), Number(["5", "Pink"])),
-            Card(Number(["6", "Green"]), WildDrawColour([None])),
+            Card(Number(["6", "Green"]), WildDrawColour(["WildDrawColour", None])),
             Card(Number(["7", "Green"]), Number(["2", "Turquoise"])),
             Card(Number(["7", "Green"]), Number(["6", "Orange"])),
             Card(Number(["8", "Green"]), Number(["9", "Turquoise"])),
@@ -204,11 +204,11 @@ class Deck:
             Card(DrawOne(["DrawOne", "Green"]), Number(["6", "Turquoise"])),
 
             Card(Reverse(["Reverse", "Yellow"]), Flip(["Flip", "Turquoise"])),
-            Card(Reverse(["Reverse", "Yellow"]), Wild(["Flip", "Black"])),
+            Card(Reverse(["Reverse", "Yellow"]), Wild(["Wild", None])),
             Card(Reverse(["Reverse", "Red"]), Number(["3", "Purple"])),
             Card(Reverse(["Reverse", "Red"]), Number(["7", "Turquoise"])),
             Card(Reverse(["Reverse", "Blue"]), Number(["4", "Orange"])),
-            Card(Reverse(["Reverse", "Blue"]), Wild([None])),
+            Card(Reverse(["Reverse", "Blue"]), Wild(["Wild", None])),
             Card(Reverse(["Reverse", "Green"]), Number(["1", "Orange"])),
             Card(Reverse(["Reverse", "Green"]), Number(["7", "Pink"])),
 
@@ -219,26 +219,26 @@ class Deck:
             Card(Flip(["Flip", "Blue"]), Number(["6", "Purple"])),
             Card(Flip(["Flip", "Blue"]), Number(["7", "Purple"])),
             Card(Flip(["Flip", "Green"]), Number(["3", "Turquoise"])),
-            Card(Flip(["Flip", "Green"]), WildDrawColour([None])),
+            Card(Flip(["Flip", "Green"]), WildDrawColour(["WildDrawColour", None])),
 
             Card(Skip(["Skip", "Yellow"]), Number(["3", "Orange"])),
             Card(Skip(["Skip", "Yellow"]), Flip(["Flip", "Turquoise"])),
             Card(Skip(["Skip", "Red"]), DrawFive(["DrawFive", "Orange"])),
-            Card(Skip(["Skip", "Red"]), Wild([None])),
+            Card(Skip(["Skip", "Red"]), Wild(["Wild", None])),
             Card(Skip(["Skip", "Blue"]), Number(["1", "Turquoise"])),
             Card(Skip(["Skip", "Blue"]), Number(["9", "Pink"])),
             Card(Skip(["Skip", "Green"]), Number(["4", "Purple"])),
             Card(Skip(["Skip", "Green"]), Number(["9", "Orange"])),
 
-            Card(Wild([None]), Number(["3", "Turquoise"])),
-            Card(Wild([None]), Number(["5", "Pink"])),
-            Card(Wild([None]), Number(["7", "Purple"])),
-            Card(Wild([None]), Flip(["Flip", "Pink"])),
+            Card(Wild(["Wild", None]), Number(["3", "Turquoise"])),
+            Card(Wild(["Wild", None]), Number(["5", "Pink"])),
+            Card(Wild(["Wild", None]), Number(["7", "Purple"])),
+            Card(Wild(["Wild", None]), Flip(["Flip", "Pink"])),
 
-            Card(WildDrawTwo([None]), Number(["2", "Pink"])),
-            Card(WildDrawTwo([None]), Number(["4", "Orange"])),
-            Card(WildDrawTwo([None]), Number(["7", "Orange"])),
-            Card(WildDrawTwo([None]), Number(["9", "Purple"]))
+            Card(WildDrawTwo(["WildDrawTwo", None]), Number(["2", "Pink"])),
+            Card(WildDrawTwo(["WildDrawTwo", None]), Number(["4", "Orange"])),
+            Card(WildDrawTwo(["WildDrawTwo", None]), Number(["7", "Orange"])),
+            Card(WildDrawTwo(["WildDrawTwo", None]), Number(["9", "Purple"]))
         ]
 
     # Create a method to deal a hand of cards to a player
@@ -253,10 +253,21 @@ class Deck:
         return hand
 
     # Create a method to pick a card from the deck
-    def pick_card(self):
+    def pick_card(self, game):
         # pick a random card from the list of cards
-        card = random.choice(self.cards)
-        self.cards.remove(card)  # remove the card from the list of cards
+        try:
+            card = random.choice(self.cards)
+            self.cards.remove(card)  # remove the card from the list of cards
+            
+        except IndexError:
+            # Shuffling cards by making new game object 
+            game.deck = Deck(game)
+            self.discard = game.deck.discard
+            game.deck.cards.remove(game.deck.discard)
+            card = random.choice(game.deck.cards)
+            game.deck.cards.remove(card)  # remove the card from the list of cards
+
+        
 
         return card
 
