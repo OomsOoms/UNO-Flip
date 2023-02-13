@@ -254,20 +254,14 @@ class Deck:
 
     # Create a method to pick a card from the deck
     def pick_card(self, game):
-        # Shuffles cards if the duck is empty
         if len(self.cards) == 0:
-            print(len(self.cards))
-            print(len(self.discard))
             print("Shuffling discard pile")
-            # Switch the deck and discard pile, append the top card of the deck to the discard pile
-            self.cards, self.discard = self.discard, self.cards
-            self.discard.append(self.cards.pop())
-
-
+            self.cards, self.discard = self.discard[1:], self.cards
+            self.cards.extend(self.discard)
+            self.discard = [self.cards.pop()]
 
         card = random.choice(self.cards)
-        self.cards.remove(card)  # remove the card from the list of cards
-        
+        self.cards.remove(card)  # Remove the card from the list of cards
         return card
 
     def check_discard(self):
