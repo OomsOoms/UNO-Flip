@@ -116,6 +116,12 @@ class Deck:
             hand.append(card)  # add the card to the player's hand
 
         return hand
+    
+    def place_card(self, card):
+        sides = (card.light, card.dark)
+        self.discard.append(card)
+        side = sides[self.flip]
+        side.behaviour(self.game)
 
     # Create a method to pick a random card from the deck
     def pick_card(self, game):
@@ -128,12 +134,6 @@ class Deck:
         self.cards.remove(card)  # Remove the card from the list of cards
         return card
 
-    def place_card(self, card):
-        sides = (card.light, card.dark)
-        side = sides[self.flip]
-        self.discard.append(card)
-        side.behaviour(self.game)
-    
     # Create a list of cards
     cards = [
         Card(Number(["1", "Yellow"]), SkipEveryone(["SkipEveryone", "Pink"])),

@@ -1,5 +1,7 @@
 import logging
 
+level = logging.INFO
+
 class LoggingFormatter(logging.Formatter):
     # Colors and styles
     black = "\x1b[30m"
@@ -34,7 +36,7 @@ class CustomLogger:
     
     def __new__(cls, name):
         logger = logging.getLogger(name)
-        logger.setLevel(logging.DEBUG)
+        logger.setLevel(level)
 
         # Console handler
         console_handler = logging.StreamHandler()

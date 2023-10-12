@@ -73,16 +73,25 @@ class Game:
 
         return discard_side, player_object, player_hand
     
-    def play_card(self, card):
-        self.deck.place_card(card)
-    
+    def select_card(self, player_id, card):
+        # Do another card check to prevent cheating from the client
+        # Check if the user_id, specific to then users session, is the same as the current player
+        if player_id == self.current_player_id and card in self.players[player_id].hand:
+            discard_side = [self.deck.discard[-1].light.side, self.deck.discard[-1].dark.side][self.deck.flip]
+            card_side = [card.light.side, card.dark.side][self.deck.flip]
+            # Only if the card is playable
+            if any(item in discard_side for item in card_side):
+                self.players[player_id].hand.remove(card)
+                logger.debug(f"Player {player_id} selected card {card_side} removed")
+                return True
+                
     # This is called at the end of a turn
     def end_turn(self):
         # Update the current player index based on the direction of the game, kept in bounds with Modulo operator
         self.current_player_index  = (self.current_player_index  + self.game_direction) % len(self.players)
         self.current_player_id = list(self.players.keys())[self.current_player_index]
 
-        self.prerequisite_func = lambda self: logger.debug("Running default prerequisite_func")  # Reset the function to do nothing
+        self.prerequisite_func = lambda self=self: logger.debug("Running default prerequisite_func")
 
         logger.debug(f"Incrementing current player index to {self.current_player_index} and player id to {self.current_player_id} and running prerequisite_func")
 
