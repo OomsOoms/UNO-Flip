@@ -25,7 +25,6 @@ class Number(Side):
     def behaviour(self, game):
         pass
 
-
 class Flip(Side):
     def __init__(self, side):
         super().__init__(side, self.__class__.__name__)
@@ -34,14 +33,12 @@ class Flip(Side):
         game.flip *= -1
         game.deck.discard = game.deck.discard[::-1]
 
-
 class DrawOne(Side):
     def __init__(self, side):
         super().__init__(side, self.__class__.__name__)
 
     def behaviour(self, game):
         game.num_pickup += 1
-
 
 class Reverse(Side):
     def __init__(self, side):
@@ -50,7 +47,6 @@ class Reverse(Side):
     def behaviour(self, game):
         game.direction *= -1
 
-
 class Wild(Side):
     def __init__(self, side):
         super().__init__(side, self.__class__.__name__)
@@ -58,7 +54,6 @@ class Wild(Side):
     def behaviour(self, game):
         colour = input("Pick a colour ")
         self.side = [colour]
-
 
 class WildDrawTwo(Side):
     def __init__(self, side):
@@ -69,7 +64,6 @@ class WildDrawTwo(Side):
         self.side = [colour]
         game.num_pickup += 2
 
-
 class DrawFive(Side):
     def __init__(self, side):
         super().__init__(side, self.__class__.__name__)
@@ -77,14 +71,12 @@ class DrawFive(Side):
     def behaviour(self, game):
         game.num_pickup += 5
 
-
 class SkipEveryone(Side):
     def __init__(self, side):
         super().__init__(side, self.__class__.__name__)
 
     def behaviour(self, game):
         game.prerequisite = self.type
-
 
 class WildDrawColour(Side):
     def __init__(self, side):
@@ -95,7 +87,6 @@ class WildDrawColour(Side):
         colour = input("Pick a colour ")
         self.side = [colour]
         return colour
-
 
 class Skip(Side):
     def __init__(self, side):
@@ -129,7 +120,6 @@ class Deck:
     # Create a method to pick a random card from the deck
     def pick_card(self, game):
         if len(self.cards) == 0:
-            print("Shuffling discard pile")
             self.cards, self.discard = self.discard[1:], self.cards
             self.cards.extend(self.discard)
             self.discard = [self.cards.pop()]

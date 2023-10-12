@@ -12,9 +12,9 @@ def get_sprite_coordinates(x, y, gap):
 
 
 # Left, Top, Right, Bottom
-light_side = Image.open("UNO Flip\Textures\Light-side.png")
+light_side = Image.open("Textures\Light-side.png")
 
 
 light_side = light_side.crop(get_sprite_coordinates(11, 3, 5))
 
-light_side.save("UNO Flip\Textures\Sinlge-card.png")
+light_side.save("Textures\Sinlge-card.png")

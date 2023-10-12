@@ -6,8 +6,10 @@ logger = CustomLogger(__name__)
 
 if __name__ == "__main__":
     game = Game()
-    game.add_player("Player 1")
-    game.generate_start_card()
-    game.get_game_sate()
+    player_id_1 = game.add_player("Player 1")
+    player_id_2 = game.add_player("Player 2")
+    logger.info(game.start_game())
+    game.prerequisite_func()
+    logger.info(game.get_game_sate(player_id_1))
+    logger.info(game.get_game_sate(player_id_2))
     game.end_turn()
-
