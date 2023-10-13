@@ -22,8 +22,8 @@ class Game:
     cards_to_draw = 0 # Only used if I add stacking draw cards
     players = {}
     current_player_index = 0
-    current_player_id = None
     prerequisite_func = lambda self: logger.debug("Running default prerequisite_func")
+    game_id = randint(10000000, 99999999)
 
     def __init__(self):
         self.deck = Deck(self)
