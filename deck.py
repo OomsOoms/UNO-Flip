@@ -1,5 +1,9 @@
 import random
 
+from utils.custom_logger import CustomLogger
+
+logger = CustomLogger(__name__)
+
 # Create a Card class
 class Card:
 
@@ -23,6 +27,8 @@ class Number(Side):
         super().__init__(side, self.__class__.__name__)
 
     def behaviour(self, game):
+        # Does nothing
+        logger.debug(f"Played a number card, side: {self.side}")
         pass
 
 class Flip(Side):
@@ -30,22 +36,19 @@ class Flip(Side):
         super().__init__(side, self.__class__.__name__)
 
     def behaviour(self, game):
+        # Reverse the order of the discard pile and change the flip value
         game.flip *= -1
         game.deck.discard = game.deck.discard[::-1]
-
-class DrawOne(Side):
-    def __init__(self, side):
-        super().__init__(side, self.__class__.__name__)
-
-    def behaviour(self, game):
-        game.num_pickup += 1
+        logger.debug(f"Flipped the discard pile, flip value: {game.flip}")
 
 class Reverse(Side):
     def __init__(self, side):
         super().__init__(side, self.__class__.__name__)
 
     def behaviour(self, game):
-        game.direction *= -1
+        # Reverse the order the current_player_index will increment
+        game.game_direction *= -1
+        logger.debug(f"Reversed the game direction, game direction: {game.game_direction}")
 
 class Wild(Side):
     def __init__(self, side):
@@ -54,7 +57,37 @@ class Wild(Side):
     def behaviour(self, game):
         colour = input("Pick a colour ")
         self.side = [colour]
+        logger.debug(f"Changed the colour to {colour}")
 
+class Skip(Side):
+    def __init__(self, side):
+        super().__init__(side, self.__class__.__name__)
+
+    def behaviour(self, game):
+        # Skips the next player by incrementing or decrementing the current_player_index by 2 depending on the direction
+        game.current_player_index = (game.current_player_index + game.direction*2) % len(game.players_list)
+        logger.debug(f"Skipped the next player, current player index: {game.current_player_index}")
+
+class SkipEveryone(Side):
+    def __init__(self, side):
+        super().__init__(side, self.__class__.__name__)
+
+    def behaviour(self, game):
+        # Player index will stay the same when incremented in the end_turn function
+        game.current_player_index = (game.current_player_index + (2 * game.game_direction)) % len(game.players_list)
+        logger.debug(f"Skipped everyone, current player index: {game.current_player_index}")
+
+# TODO: Implement this behaviour
+class DrawOne(Side):
+    def __init__(self, side):
+        super().__init__(side, self.__class__.__name__)
+
+    def behaviour(self, game):
+        current_player_hand = game.players[game.current_player_id].hand
+        current_player_hand.append(game.deck.pick_card(game))
+        game.end_turn()
+        logger.debug(f"Drew 1 card, current player hand: {current_player_hand}")
+        
 class WildDrawTwo(Side):
     def __init__(self, side):
         super().__init__(side, self.__class__.__name__)
@@ -62,39 +95,28 @@ class WildDrawTwo(Side):
     def behaviour(self, game):
         colour = input("Pick a colour ")
         self.side = [colour]
-        game.num_pickup += 2
+
+        pass # TODO: Implement this behaviour
 
 class DrawFive(Side):
     def __init__(self, side):
         super().__init__(side, self.__class__.__name__)
 
     def behaviour(self, game):
-        game.num_pickup += 5
-
-class SkipEveryone(Side):
-    def __init__(self, side):
-        super().__init__(side, self.__class__.__name__)
-
-    def behaviour(self, game):
-        game.prerequisite = self.type
-
+        current_player_hand = game.players[game.current_player_id].hand
+        current_player_hand.extend(game.deck.pick_card(game) for _ in range(5))
+        game.end_turn()
+        logger.debug(f"Drew 5 cards, current player hand: {current_player_hand}")
+        
 class WildDrawColour(Side):
     def __init__(self, side):
         super().__init__(side, self.__class__.__name__)
 
     def behaviour(self, game):
-        game.prerequisite = self.type
         colour = input("Pick a colour ")
         self.side = [colour]
-        return colour
 
-class Skip(Side):
-    def __init__(self, side):
-        super().__init__(side, self.__class__.__name__)
-
-    def behaviour(self, game):
-        game.current_player_index = (game.current_player_index + game.direction) % len(game.players_list)
-
+        pass # TODO: Implement this behaviour
 
 # Create a Deck class
 class Deck:

@@ -1,6 +1,6 @@
 import logging
 
-level = logging.INFO
+level = logging.DEBUG
 
 class LoggingFormatter(logging.Formatter):
     # Colors and styles

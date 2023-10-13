@@ -19,8 +19,10 @@ class Player:
 class Game:
     
     game_direction = 1  # 1 for normal, -1 for reverse
+    cards_to_draw = 0 # Only used if I add stacking draw cards
     players = {}
     current_player_index = 0
+    current_player_id = None
     prerequisite_func = lambda self: logger.debug("Running default prerequisite_func")
 
     def __init__(self):
@@ -73,17 +75,20 @@ class Game:
 
         return discard_side, player_object, player_hand
     
+    # Ends the turn when a card is placed, this function is skipped if a prerequisite_func calls the end_turn function
     def select_card(self, player_id, card):
         # Do another card check to prevent cheating from the client
         # Check if the user_id, specific to then users session, is the same as the current player
         if player_id == self.current_player_id and card in self.players[player_id].hand:
             discard_side = [self.deck.discard[-1].light.side, self.deck.discard[-1].dark.side][self.deck.flip]
             card_side = [card.light.side, card.dark.side][self.deck.flip]
+            card_behaviour = [card.light.behaviour, card.dark.behaviour][self.deck.flip]
             # Only if the card is playable
             if any(item in discard_side for item in card_side):
                 self.players[player_id].hand.remove(card)
-                logger.debug(f"Player {player_id} selected card {card_side} removed")
-                return True
+                self.prerequisite_func = card_behaviour
+                logger.debug(f"Player {player_id} selected card {card_side} removed adding prequisite_func to queue")
+                self.end_turn()
                 
     # This is called at the end of a turn
     def end_turn(self):
@@ -94,5 +99,3 @@ class Game:
         self.prerequisite_func = lambda self=self: logger.debug("Running default prerequisite_func")
 
         logger.debug(f"Incrementing current player index to {self.current_player_index} and player id to {self.current_player_id} and running prerequisite_func")
-
-        
