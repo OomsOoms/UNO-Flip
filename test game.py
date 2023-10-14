@@ -11,12 +11,14 @@ if __name__ == "__main__":
     player_id_2 = game.add_player("Player 2")
 
     game.start_game()
+    logger.debug(game.get_game_state(player_id_1))
 
     while True:
-        game.prerequisite_func()
+        #game.prerequisite_func()
         
         logger.info(f"Current player: {game.current_player_id}, Current player index: {game.current_player_index}")
         # Simulating the website where this all happens simultaneously
+        game.get_game_sate(player_id_1)
         discard, player_1_object, player_1_hand = game.get_game_sate(player_id_1)
         discard, player_2_object, player_2_hand = game.get_game_sate(player_id_2)
 

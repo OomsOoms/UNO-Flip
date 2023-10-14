@@ -37,7 +37,7 @@ class Flip(Side):
 
     def behaviour(self, game):
         # Reverse the order of the discard pile and change the flip value
-        game.flip *= -1
+        game.flip = (game.flip + 1) % 2
         game.deck.discard = game.deck.discard[::-1]
         logger.debug(f"Flipped the discard pile, flip value: {game.flip}")
 
@@ -280,4 +280,3 @@ class Deck:
         Card(WildDrawTwo(["WildDrawTwo", None]), Number(["7", "Orange"])),
         Card(WildDrawTwo(["WildDrawTwo", None]), Number(["9", "Purple"]))
     ]
-    
