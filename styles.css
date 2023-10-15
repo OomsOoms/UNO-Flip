@@ -1,0 +1,68 @@
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    margin: 0;
+    background-color: rgb(25, 25, 25);
+    font-family: Arial, sans-serif;
+}
+
+div {
+    margin: 10px 0;
+}
+
+/* Common styles for form elements (inputs and buttons) */
+.form-element-common {
+    background-color: rgb(25, 25, 25);
+    color: white;
+    border: 2px solid rgb(70, 70, 70);    
+    border-radius: 5px;
+    padding: 10px 20px;
+    height: 50px;
+    font-size: 20px;
+    box-sizing: border-box;
+    font-weight: bold;
+    transition: border-color 0.5s ease; 
+}
+
+#gameIdInput {
+    width: 250px;
+    border-radius: 5px 0 0 5px;
+    text-align: center;
+}
+
+#usernameInput {
+    width: 350px;
+    text-align: center;
+}
+
+#joinGameButton {
+    border-radius: 0 5px 5px 0;
+    background-color: rgb(70, 70, 70);
+    width: 100px;
+}
+
+#createGameButton {
+    background-color: rgb(70, 70, 70);
+    width: 350px;
+}
+
+#orText {
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+}
+
+#joinGameButton:hover, #createGameButton:hover {
+    background-color: rgba(70, 70, 70, 0.8);
+    transition: background-color 0.3s;
+}
+
+#joinGameButton:active, #createGameButton:active {
+    background-color: rgba(70, 70, 70, 0.6);
+}
