@@ -5,18 +5,19 @@
     <link rel="stylesheet" type="text/css" href="styles.css" />
   </head>
   <body>
+    <h1>Join Game</h1>
     <div>
       <input class="form-element-common" type="text" placeholder="Username" id="usernameInput" />
     </div>
     <div>
       <input class="form-element-common", type="text" placeholder="Game ID" id="gameIdInput" />
-      <button class="form-element-common" id="joinGameButton">Join!</button>
+      <button onclick="joinGameButton()" class="form-element-common" id="joinGameButton">Join!</button>
     </div>
     <div>
       <p id="orText">Or</p>
     </div>
     <div>
-      <button class="form-element-common" id="createGameButton">Create Game</button>
+      <button onclick="createGameButton()" class="form-element-common" id="createGameButton">Create Game</button>
     </div>
 
     <script src="script.js"></script>

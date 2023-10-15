@@ -139,7 +139,7 @@ async def lobby(lobby_request: LobbyRequest) -> Union[dict, None]:
 
     game = games.get(lobby_request.game_id)
     
-    if not game and player_id not in game.players:
+    if game is None or player_id not in game.players:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request to join game")
     
     is_host = next(iter(game.players)) == player_id

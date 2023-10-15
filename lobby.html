@@ -1,11 +1,28 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Game Lobby</title>
-    <link rel="stylesheet" type="text/css" href="styles.css" />
+<head>
+  <title>Game Lobby</title>
+  <link rel="stylesheet" type="text/css" href="styles.css" />
 </head>
 <body>
-    
-    <script src="script.js"></script>
-  </body>
+  <div id="lobbyContainer">
+    <h1>Game Lobby</h1>
+    <div id="gameInfo">
+      <p><strong>Game ID:</strong> <span id="gameId" class="large"></span></p>
+    </div>
+  </div>
+
+  <div id="playerCountContainer">
+    <p id="playerCount">1/10<br>Players</p>
+  </div>
+
+  <div id="playerListContainer">
+    <ul id="playerList">
+
+    </ul>
+  </div>
+
+  <script src="script.js"></script>
+  <script>window.onload = loadLobby()</script>
+</body>
 </html>

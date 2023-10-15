@@ -18,7 +18,7 @@ class Player:
 class Game:
 
         def __init__(self) -> None:
-            self.game_id = randint(10000000, 99999999)
+            self.game_id = randint(100000, 999999)
             self.players = {}
             self.deck = Deck(self)
             self.game_direction = 1
