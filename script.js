@@ -1,9 +1,24 @@
-const apiUrl = "http://192.168.0.231:8000";
+//const apiUrl = "http://127.0.0.1:8000";
+//const apiUrl = "http://192.168.0.231:8000";
+const apiUrl = "https://xw2fbn56-8000.uks1.devtunnels.ms/"
 
-// Function to handle the click event for the "Join!" button
 const gameIdInput = document.getElementById("gameIdInput");
 const usernameInput = document.getElementById("usernameInput");
 
+function getCookieValue(key) {
+    const cookies = document.cookie.split("; ");
+    
+    for (const cookie of cookies) {
+        const [cookieKey, cookieValue] = cookie.split("=");
+        if (cookieKey === key) {
+            return cookieValue;
+        }
+    }
+    
+    return null;  // Return null if no cookie with the provided game ID is found
+}
+
+// Function to handle the click event for the "Join!" button
 function checkInput(username, gameId) {
 	let usernameEmpty = false;
 	let gameIdEmpty = false;
@@ -35,35 +50,24 @@ function checkInput(username, gameId) {
 	return usernameEmpty || gameIdEmpty;
 }
 
-function getCookieValue(key) {
-    const cookies = document.cookie.split("; ");
-    
-    for (const cookie of cookies) {
-        const [cookieKey, cookieValue] = cookie.split("=");
-        if (cookieKey === key) {
-            return cookieValue;
-        }
-    }
-    
-    return null;  // Return null if no cookie with the provided game ID is found
-}
-
 function joinGameButton() {
-	var gameid = gameIdInput.value;
-	var username = usernameInput.value;
+	gameIdInput.disabled = true;
 
-	if (checkInput(username, gameid)) {
+	const gameId = gameIdInput.value;
+	const username = usernameInput.value;
+
+	if (checkInput(username, gameId)) {
 		return;
 	}
 
-	if (getCookieValue(gameid)){
-		window.location.href = "lobby.html?game_id=" + gameid;
+	if (sessionStorage.getItem(gameId)){
+		window.location.href = "lobby.html?game_id=" + gameId;
 		return;
 	}
 
 	var apiEndpointUrl = apiUrl + "/join_game";
 	var jsonData = {
-		game_id: gameid,
+		game_id: gameId,
 		player_name: username,
 	};
 	var jsonString = JSON.stringify(jsonData);
@@ -84,8 +88,10 @@ function joinGameButton() {
 	.then((data) => {
 		if (data.detail === "Game is full") {
 			console.error("Game is full");
+		} if(data.detail === "Game has already started") {
+			console.log("Game has already started");
 		} else {
-			document.cookie = `${data.game_id}=${data.player_id}; `;
+			sessionStorage.setItem(data.game_id, data.player_id)
 			window.location.href = "lobby.html?game_id=" + data.game_id;
 		}
 	})
@@ -118,7 +124,7 @@ function createGameButton() {
 			return response.json();
 		})
 		.then((data) => {
-			document.cookie = `${data.game_id}=${data.player_id}; `;
+			sessionStorage.setItem(data.game_id, data.player_id)
 			window.location.href = "lobby.html?game_id=" + data.game_id;
 		})
 		.catch((error) => {
@@ -127,16 +133,12 @@ function createGameButton() {
 }
 
 function loadLobby() {
-	sessionStorage.setItem('username', 'john_doe');  // Store the username in localStorage
-	sessionStorage.setItem('username', 'john_doe');  // Store the username in localStorage
-	sessionStorage.setItem('username', 'john_doe');  // Store the username in localStorage
-	console.log(cookies = document.cookie);
 	const urlParams = new URLSearchParams(window.location.search);
 	const gameId = urlParams.get('game_id');
-	const playerId = getCookieValue(gameId)
+	const playerId = sessionStorage.getItem(gameId); // Fetch the player ID stored under the game ID
 
 	// If the user enters an invalid id (e.g. a game that doesn't exist), they will be directed to index
-	if (!getCookieValue(gameId)){
+	if (!playerId){
 		console.error("Invalid game ID");
 		window.location.href = "index.html";
 	}
