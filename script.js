@@ -1,6 +1,6 @@
 //const apiUrl = "http://127.0.0.1:8000";
 //const apiUrl = "http://192.168.0.231:8000";
-const apiUrl = "https://xw2fbn56-8000.uks1.devtunnels.ms/"
+const apiUrl = "https://xw2fbn56-8000.uks1.devtunnels.ms"
 
 const gameIdInput = document.getElementById("gameIdInput");
 const usernameInput = document.getElementById("usernameInput");
