@@ -54,16 +54,19 @@ function checkInput(username, gameId) {
 }
 
 function joinGameButton() {
-	gameIdInput.disabled = true;
-
+	// Disable the button to prevent multiple clicks
+	joinGameButton.disabled = true;
 	const gameId = gameIdInput.value;
 	const username = usernameInput.value;
 
+	// If the username is invalid return
 	if (checkInput(username, gameId)) {
+		console.log("Invalid details");
 		return;
-	}
-
-	if (sessionStorage.getItem(gameId)){
+	} 
+	// If the user already has the gamein their session
+	if (sessionStorage.getItem(gameId)) {
+		console.log("Already joined game");
 		window.location.href = "lobby.html?game_id=" + gameId;
 		return;
 	}
@@ -74,6 +77,7 @@ function joinGameButton() {
 		player_name: username,
 	};
 	var jsonString = JSON.stringify(jsonData);
+	console.log(jsonString);
 
 	fetch(apiEndpointUrl, {
 		method: "POST",
@@ -83,7 +87,14 @@ function joinGameButton() {
 		body: jsonString,
 	})
 	.then((response) => {
-		return response.json();
+		console.log("Response status: " + response.status)
+		if (response.status !== 200) {
+			console.log("Status not 200");
+			showNotification("Invalid game ID");
+			return;
+		} else {
+			return response.json();
+		}
 	})
 	.then((data) => {
 		if (data.detail === "Game is full") {
@@ -95,8 +106,9 @@ function joinGameButton() {
 			console.log("Game has already started");
 			return;
 		} else {
+			console.log("Found game")
 			sessionStorage.setItem(data.game_id, data.player_id)
-			window.location.href = "lobby.html?game_id=" + data.game_id;
+			//window.location.href = "lobby.html?game_id=" + data.game_id;
 		}
 	})
 	.catch((error) => {
