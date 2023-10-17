@@ -92,3 +92,32 @@ p {
 #joinGameButton:active, #createGameButton:active {
     background-color: rgba(70, 70, 70, 0.5);
 }
+
+.notification {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: rgb(100, 0, 0);
+  color: #fff;
+  text-align: center;
+  z-index: 1000;
+}
+
+.notification-content {
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.close-btn {
+  font-size: 20px;
+  cursor: pointer;
+}
+
+#notification-message {
+  flex: 1;
+  margin: 0;
+}

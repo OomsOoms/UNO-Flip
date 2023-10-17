@@ -1,22 +1,25 @@
 //const apiUrl = "http://127.0.0.1:8000";
-//const apiUrl = "http://192.168.0.231:8000";
-const apiUrl = "https://xw2fbn56-8000.uks1.devtunnels.ms"
+const apiUrl = "http://192.168.0.231:8000";
+//const apiUrl = "https://xw2fbn56-8000.uks1.devtunnels.ms"
 
 const gameIdInput = document.getElementById("gameIdInput");
 const usernameInput = document.getElementById("usernameInput");
 
-function getCookieValue(key) {
-    const cookies = document.cookie.split("; ");
-    
-    for (const cookie of cookies) {
-        const [cookieKey, cookieValue] = cookie.split("=");
-        if (cookieKey === key) {
-            return cookieValue;
-        }
-    }
-    
-    return null;  // Return null if no cookie with the provided game ID is found
-}
+function showNotification(message) {
+	const notification = document.querySelector('.notification');
+	const notificationMessage = document.querySelector('#notification-message');
+	notificationMessage.textContent = message;
+	notification.style.display = 'block';
+  
+	setTimeout(() => {
+	  closeNotification();
+	}, 5000); // Auto-close the notification after 5 seconds
+  }
+  
+  function closeNotification() {
+	const notification = document.querySelector('.notification');
+	notification.style.display = 'none';
+  }
 
 // Function to handle the click event for the "Join!" button
 function checkInput(username, gameId) {
@@ -80,16 +83,17 @@ function joinGameButton() {
 		body: jsonString,
 	})
 	.then((response) => {
-		if (!response.ok) {
-			throw new Error("Network response was not ok");
-		}
 		return response.json();
 	})
 	.then((data) => {
 		if (data.detail === "Game is full") {
+			showNotification("Game is full");
 			console.error("Game is full");
+			return;
 		} if(data.detail === "Game has already started") {
+			showNotification("Game has already started");
 			console.log("Game has already started");
+			return;
 		} else {
 			sessionStorage.setItem(data.game_id, data.player_id)
 			window.location.href = "lobby.html?game_id=" + data.game_id;
@@ -141,6 +145,7 @@ function loadLobby() {
 	if (!playerId){
 		console.error("Invalid game ID");
 		window.location.href = "index.html";
+		return;
 	}
 
 	var apiEndpointUrl = apiUrl + "/lobby";
@@ -184,3 +189,7 @@ function loadLobby() {
 		console.error("Fetch error:", error);
 	});
 }
+
+
+
+  

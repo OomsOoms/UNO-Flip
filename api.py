@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Union # Used when a function can return multiple types
@@ -9,11 +10,6 @@ from utils.custom_logger import CustomLogger
 
 # Create a FastAPI instance, run using: uvicorn api:app --reload --host 0.0.0.0
 app = FastAPI(title="UNO API", description="API for the UNO Flip game", version="0.1.0")
-# BEGIN: no-cors
-from fastapi.middleware.cors import CORSMiddleware
-
-# Create a FastAPI instance
-app = FastAPI(title="UNO API", description="API for the UNO Flip game", version="0.1.0")
 
 # Add the CORSMiddleware to the FastAPI instance
 app.add_middleware(
@@ -23,7 +19,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-# END: no-cors
 
 logger = CustomLogger(__name__)
 
@@ -83,6 +78,7 @@ async def create_game(create_game_request: CreateGameRequest) -> dict:
     game = Game()
     games[game.game_id] = game
     player_id = game.add_player(player_name)
+    logger.debug(f"Created game {game.game_id} with player {player_id}")
     return JSONResponse(content={"game_id": game.game_id, "player_id": player_id}, status_code=status.HTTP_201_CREATED)
 
 
@@ -105,12 +101,15 @@ async def join_game(join_id_request: JoinGameRequest) -> Union[dict, None]:
     player_name = join_id_request.player_name
 
     if game is None:
+        logger.debug(f"Game {join_id_request.game_id} not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Game not found")
 
     if game.started:
+        logger.debug(f"Game {join_id_request.game_id} has already started")
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Game has already started")
 
     if len(game.players) >= 10:
+        logger.debug(f"Game {join_id_request.game_id} is full")
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Game is full")
 
     # Add the player to the game and get their ID
@@ -144,6 +143,7 @@ async def lobby(lobby_request: LobbyRequest) -> Union[dict, None]:
     
     is_host = next(iter(game.players)) == player_id
     player_names = [player.name for player in game.players.values()]
+    logger.debug(f"Player {player_id} requested lobby for game {game.game_id}")
     return {"player_names": player_names, "is_host": is_host}
 
 
