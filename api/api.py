@@ -4,11 +4,11 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Union # Used when a function can return multiple types
 
-from game import Game
+from api.game import Game
 
 from utils.custom_logger import CustomLogger
 
-# Create a FastAPI instance, run using: uvicorn api:app --reload --host 0.0.0.0
+# Create a FastAPI instance, run using: uvicorn api.api:app --reload --host 0.0.0.0
 app = FastAPI(title="UNO API", description="API for the UNO Flip game", version="0.1.0")
 
 # Add the CORSMiddleware to the FastAPI instance

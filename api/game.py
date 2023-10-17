@@ -1,7 +1,7 @@
 import uuid
 from random import randint
 
-from deck import *
+from api.deck import *
 from utils.custom_logger import CustomLogger
 
 logger = CustomLogger(__name__)
