@@ -1,9 +1,32 @@
-const apiUrl = "http://127.0.0.1:8000";
-//const apiUrl = "http://192.168.0.231:8000";
-//const apiUrl = "https://xw2fbn56-8000.uks1.devtunnels.ms"
+//const apiUrl = "http://127.0.0.1:8000";
+const apiUrl = "http://192.168.0.231:8000";
+//const apiUrl = "https://l7sr6hzb-8000.uks1.devtunnels.ms"
 
 const gameIdInput = document.getElementById("gameIdInput");
 const usernameInput = document.getElementById("usernameInput");
+
+var ws = new WebSocket(`ws://192.168.0.231:8000`);
+
+ws.onopen = function() {
+	console.log('WebSocket Client Connected');
+};
+ws.onclose = function() {
+	console.log('WebSocket Client Disconnected');
+}
+ws.onmessage = function(event) {
+	var messages = document.getElementById('messages')
+	var message = document.createElement('li')
+	var content = document.createTextNode(event.data)
+	message.appendChild(content)
+	messages.appendChild(message)
+};
+function sendMessage(event) {
+	console.log(event)
+	var input = document.getElementById("messageText")
+	ws.send(input.value)
+	input.value = ''
+	event.preventDefault()
+}
 
 function showNotification(message) {
 	const notification = document.querySelector('.notification');
@@ -54,31 +77,26 @@ function checkInput(username, gameId) {
 }
 
 function joinGameButton() {
-	// Disable the button to prevent multiple clicks
-	joinGameButton.disabled = true;
+	// Get the values from the input fields
 	const gameId = gameIdInput.value;
 	const username = usernameInput.value;
-
-	// If the username is invalid return
+	// Check if the inputs are valid
 	if (checkInput(username, gameId)) {
-		console.log("Invalid details");
-		return;
-	} 
-	// If the user already has the gamein their session
-	if (sessionStorage.getItem(gameId)) {
-		console.log("Already joined game");
-		window.location.href = "lobby.html?game_id=" + gameId;
 		return;
 	}
-
-	var apiEndpointUrl = apiUrl + "/join_game";
+	// Check if the game ID is already in the session storage and redirect
+	if (sessionStorage.getItem(gameId)){
+		window.location.href = "lobby.html?id=" + gameId;
+		return;
+	}
+	// Create the JSON data to send to the server
 	var jsonData = {
 		game_id: gameId,
 		player_name: username,
 	};
 	var jsonString = JSON.stringify(jsonData);
-	console.log(jsonString);
-
+	var apiEndpointUrl = apiUrl + "/join_game";
+	// Send the request to the server
 	fetch(apiEndpointUrl, {
 		method: "POST",
 		headers: {
@@ -87,29 +105,33 @@ function joinGameButton() {
 		body: jsonString,
 	})
 	.then((response) => {
-		console.log("Response status: " + response.status)
-		if (response.status !== 200) {
-			console.log("Status not 200");
-			showNotification("Invalid game ID");
-			return;
-		} else {
-			return response.json();
+		console.log(response.status);
+		switch (response.status) {
+			// 422 returned from API 404 means that the game doesn't exist
+			case 422 || 404:
+				console.log("Game not found");
+				showNotification("Game not found");
+				throw new Error("Game not found");
+			// 409 conflict means that the game has already started
+			case 409:
+				console.log("Game has already started");
+				showNotification("Game has already started");
+				throw new Error("Game has already started");
+			// 403 forbidden means that the game is already full
+			case 403:
+				console.log("Game is already full");
+				showNotification("Game is already full");
+				throw new Error("Game is already full");
+			// 201 means that the player has been added to the game
+			case 201:
+				console.log("Joined game");
+				return response.json();
 		}
 	})
 	.then((data) => {
-		if (data.detail === "Game is full") {
-			showNotification("Game is full");
-			console.error("Game is full");
-			return;
-		} if(data.detail === "Game has already started") {
-			showNotification("Game has already started");
-			console.log("Game has already started");
-			return;
-		} else {
-			console.log("Found game")
-			sessionStorage.setItem(data.game_id, data.player_id)
-			//window.location.href = "lobby.html?game_id=" + data.game_id;
-		}
+		console.log(data);
+		sessionStorage.setItem(data.game_id, data.player_id)
+		window.location.href = "lobby.html?id=" + data.game_id;
 	})
 	.catch((error) => {
 		console.error("There was a problem with the fetch operation:", error);
@@ -141,7 +163,7 @@ function createGameButton() {
 		})
 		.then((data) => {
 			sessionStorage.setItem(data.game_id, data.player_id)
-			window.location.href = "lobby.html?game_id=" + data.game_id;
+			window.location.href = "lobby.html?id=" + data.game_id;
 		})
 		.catch((error) => {
 			console.error("There was a problem with the fetch operation:", error);
@@ -149,24 +171,23 @@ function createGameButton() {
 }
 
 function loadLobby() {
+	// Get the values from the 
 	const urlParams = new URLSearchParams(window.location.search);
-	const gameId = urlParams.get('game_id');
+	const gameId = urlParams.get("id");
 	const playerId = sessionStorage.getItem(gameId); // Fetch the player ID stored under the game ID
-
-	// If the user enters an invalid id (e.g. a game that doesn't exist), they will be directed to index
+	// Check session storage for the game ID, if it doesn't exist redirect to the index page
 	if (!playerId){
-		console.error("Invalid game ID");
 		window.location.href = "index.html";
 		return;
 	}
-
-	var apiEndpointUrl = apiUrl + "/lobby";
+	// Create the JSON data to send to the server
 	var jsonData = {
 		game_id: gameId,
 		player_id: playerId,
 	};
 	var jsonString = JSON.stringify(jsonData);
-
+	var apiEndpointUrl = apiUrl + "/lobby";
+	// Send the request to the server
 	fetch(apiEndpointUrl, {
 		method: "POST",
 		headers: {
@@ -175,10 +196,11 @@ function loadLobby() {
 		body: jsonString,
 	})
 	.then((response) => {
-		if (response.status === 400) {
-			window.location.href = "index.html";
-		} else {
+		if (response.status === 200) {
 			return response.json();
+		} else {
+			window.location.href = "index.html";
+			return;
 		}
 	})
 	.then((data) => {
@@ -187,7 +209,9 @@ function loadLobby() {
 		const gameIdSpan = document.getElementById("gameId");
 		const playerListDiv = document.getElementById("playerList");
 		const playerNames = data.player_names;
-
+		const playerCount = document.getElementById("playerCount");
+		
+		playerCount.textContent = playerNames.length + "/10";
 		gameIdSpan.textContent = gameId;
 		playerListDiv.innerHTML = "";
 		
@@ -196,6 +220,7 @@ function loadLobby() {
 			playerElement.textContent = playerName;
 			playerListDiv.appendChild(playerElement);
 		}
+
 	})
 	.catch((error) => {
 		console.error("Fetch error:", error);

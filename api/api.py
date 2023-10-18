@@ -1,8 +1,8 @@
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, status, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from typing import Union # Used when a function can return multiple types
+from typing import Union, Dict, List # Used when a function can return multiple types
 
 from api.game import Game
 
@@ -50,6 +50,27 @@ class SelectCardRequest(BaseModel):
     game_id: int
     player_id: str
     card_index: int
+
+
+connected_websockets: List[WebSocket] = []
+
+# When a new user joins a game all connected websockets will be notified
+@app.websocket("/update")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    connected_websockets.append(websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            for current_websocket in connected_websockets:
+                await current_websocket.send_text(f"Message text was: {data}")
+    except WebSocketDisconnect:
+        connected_websockets.remove(websocket)
+        logger.debug(f"Websocket {websocket.client} disconnected")
+
+@app.get("/connected_websockets")
+async def get_connected_websockets():
+    return {"connected_websockets": [str(ws.client) for ws in connected_websockets]}
 
 
 @app.get("/")
@@ -106,7 +127,7 @@ async def join_game(join_id_request: JoinGameRequest) -> Union[dict, None]:
 
     if game.started:
         logger.debug(f"Game {join_id_request.game_id} has already started")
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Game has already started")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Game has already started")
 
     if len(game.players) >= 10:
         logger.debug(f"Game {join_id_request.game_id} is full")
@@ -139,12 +160,12 @@ async def lobby(lobby_request: LobbyRequest) -> Union[dict, None]:
     game = games.get(lobby_request.game_id)
     
     if game is None or player_id not in game.players:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request to join game")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request to fetch lobby")
     
     is_host = next(iter(game.players)) == player_id
     player_names = [player.name for player in game.players.values()]
     logger.debug(f"Player {player_id} requested lobby for game {game.game_id}")
-    return {"player_names": player_names, "is_host": is_host}
+    return JSONResponse(content={"player_names": player_names, "is_host": is_host}, status_code=status.HTTP_200_OK)
 
 
 @app.post("/start_game")
