@@ -74,7 +74,7 @@ class Game:
                 logger.debug(f"Selecting new start card {[start_card.light.side, start_card.dark.side][self.deck.flip]}")
 
             self.current_player_index = randint(0, len(self.players)-1)
-            logger.debug(f"Starting game with player index: {self.current_player_index}, player id: {self.current_player_id}")
+            logger.debug(f"Current player index: {self.current_player_index} and player id: {self.current_player_id}")
             self.started = True 
 
         def get_game_state(self, player_id):

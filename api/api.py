@@ -1,7 +1,8 @@
-from fastapi import FastAPI, HTTPException, status, WebSocket
+from fastapi import FastAPI, HTTPException, status, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from typing import Union # Used when a function can return multiple types
+import asyncio
 
 from api.game import Game
 from api.request_model import *
@@ -26,25 +27,8 @@ logger = CustomLogger(__name__)
 # Dictionary to store game objects with their IDs as keys
 games = {}
 
+# Create a connection manager instance to manage the websocket connections
 manager = ConectionManager()
-
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await manager.connect(websocket)
-    try:
-        while True:
-            data = await websocket.receive_text()
-            await manager.send_personal_message(f"You wrote: {data}", websocket)
-            await manager.broadcast(f"Client says: {data}")
-    except Exception as e:
-        logger.error(e)
-    finally:
-        manager.disconnect(websocket)
-
-@app.get("/connected_websockets")
-async def get_connected_websockets():
-    return {"connected_websockets": [str(ws.client) for ws in manager.active_connections]}
-
 
 @app.get("/")
 async def root():
@@ -55,6 +39,28 @@ async def root():
         str: A message indicating that the API is online
     """
     return "Online"
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    """
+    Endpoint for the websocket connection
+    """
+    await manager.connect(websocket)
+    logger.debug(f"Connected to websocket {websocket.client}")
+    try:
+        while True:
+            data = await websocket.receive_text()
+            logger.debug(f"Received data from websocket {websocket.client}: {data}")
+            await manager.broadcast(f"Client says: {data}")
+
+    except WebSocketDisconnect:
+        logger.debug(f"Disconnected websocket {websocket.client}")
+        manager.disconnect(websocket)
+
+
+@app.get("/connected_websockets")
+async def get_connected_websockets():
+    return {"connected_websockets": [str(ws.client) for ws in manager.active_connections]}
 
 
 @app.post("/create_game")
@@ -72,7 +78,6 @@ async def create_game(create_game_request: CreateGameRequest) -> dict:
     game = Game()
     games[game.game_id] = game
     player_id = game.add_player(player_name)
-    logger.debug(f"Created game {game.game_id} with player {player_id}")
     return JSONResponse(content={"game_id": game.game_id, "player_id": player_id}, status_code=status.HTTP_201_CREATED)
 
 
@@ -95,20 +100,19 @@ async def join_game(join_id_request: JoinGameRequest) -> Union[dict, None]:
     player_name = join_id_request.player_name
 
     if game is None:
-        logger.debug(f"Game {join_id_request.game_id} not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Game not found")
 
     if game.started:
-        logger.debug(f"Game {join_id_request.game_id} has already started")
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Game has already started")
 
     if len(game.players) >= 10:
-        logger.debug(f"Game {join_id_request.game_id} is full")
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Game is full")
 
+    # Broadcast that a player has joined the game to all connected websockets
+    await manager.broadcast(f"Player {player_name} has joined the game")
+    logger.debug("Broadcasted that a player has joined the game")
     # Add the player to the game and get their ID
     player_id = game.add_player(player_name)
-    
     return JSONResponse(content={"game_id": game.game_id, "player_id": player_id}, status_code=status.HTTP_201_CREATED)
 
 
@@ -137,7 +141,7 @@ async def lobby(lobby_request: LobbyRequest) -> Union[dict, None]:
     
     is_host = next(iter(game.players)) == player_id
     player_names = [player.name for player in game.players.values()]
-    logger.debug(f"Player {player_id} requested lobby for game {game.game_id}")
+    logger.debug(f"Requested lobby: Player names: {player_names} is_host: {is_host} player_id: {player_id}")
     return JSONResponse(content={"player_names": player_names, "is_host": is_host}, status_code=status.HTTP_200_OK)
 
 

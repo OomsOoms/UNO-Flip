@@ -24,8 +24,8 @@ class LoggingFormatter(logging.Formatter):
     def format(self, record):
         log_color = self.COLORS[record.levelno]
         format_str = (
-            f"{self.black}{self.bold}{{asctime}}{self.reset} "
-            f"{log_color}{{levelname:<8}}{self.reset} "
+            f"{log_color}{{levelname:<10}}{self.reset}"
+            f"{self.black}{self.bold}{{asctime}}{self.reset} - "
             f"{self.green}{{name}}{self.reset} "
             f"{self.bold}{{message}}{self.reset}"
         )
