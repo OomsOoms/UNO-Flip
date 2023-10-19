@@ -1,11 +1,11 @@
-from fastapi import FastAPI, HTTPException, status, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, status, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
-from typing import Union, Dict, List # Used when a function can return multiple types
+from typing import Union # Used when a function can return multiple types
 
 from api.game import Game
-
+from api.request_model import *
+from api.connection_manager import ConectionManager
 from utils.custom_logger import CustomLogger
 
 # Create a FastAPI instance, run using: uvicorn api.api:app --reload --host 0.0.0.0
@@ -20,53 +20,30 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Create a logger instance
 logger = CustomLogger(__name__)
 
 # Dictionary to store game objects with their IDs as keys
 games = {}
 
-# Define the request model for creating a game
-class CreateGameRequest(BaseModel):
-    player_name: str
+manager = ConectionManager()
 
-# Define the request model for joining a game
-class JoinGameRequest(BaseModel):
-    game_id: int
-    player_name: str
-
-class LobbyRequest(BaseModel):
-    game_id: int
-    player_id: str
-
-class StartGameRequest(BaseModel):
-    game_id: int
-    player_id: str
-
-class GetGameStateRequest(BaseModel):
-    game_id: int
-    player_id: str
-
-class SelectCardRequest(BaseModel):
-    game_id: int
-    player_id: str
-    card_index: int
-
-
-connected_websockets: List[WebSocket] = []
-
-# When a new user joins a game all connected websockets will be notified
-@app.websocket("/game")
+@app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    logger.debug(f"Websocket {websocket.client} connected")
-    connected_websockets.append(websocket)
-    for ws in connected_websockets:
-        logger.debug(f"Sending message to {ws.client}")
-        await ws.send_json({"message": "New user joined"})
+    await manager.connect(websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            await manager.send_personal_message(f"You wrote: {data}", websocket)
+            await manager.broadcast(f"Client says: {data}")
+    except Exception as e:
+        logger.error(e)
+    finally:
+        manager.disconnect(websocket)
 
 @app.get("/connected_websockets")
 async def get_connected_websockets():
-    return {"connected_websockets": [str(ws.client) for ws in connected_websockets]}
+    return {"connected_websockets": [str(ws.client) for ws in manager.active_connections]}
 
 
 @app.get("/")
