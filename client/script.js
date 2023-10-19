@@ -5,8 +5,7 @@ const apiUrl = "http://192.168.0.231:8000";
 const gameIdInput = document.getElementById("gameIdInput");
 const usernameInput = document.getElementById("usernameInput");
 
-var ws = new WebSocket(`ws://192.168.0.231:8000`);
-
+/*
 ws.onopen = function() {
 	console.log('WebSocket Client Connected');
 };
@@ -27,6 +26,7 @@ function sendMessage(event) {
 	input.value = ''
 	event.preventDefault()
 }
+*/
 
 function showNotification(message) {
 	const notification = document.querySelector('.notification');
@@ -124,15 +124,20 @@ function joinGameButton() {
 				throw new Error("Game is already full");
 			// 201 means that the player has been added to the game
 			case 201:
-				console.log("Joined game");
+				console.log("Joined game and connected to WebSocket");
 				return response.json();
-		}
-	})
-	.then((data) => {
-		console.log(data);
-		sessionStorage.setItem(data.game_id, data.player_id)
-		window.location.href = "lobby.html?id=" + data.game_id;
-	})
+			}
+		})
+		.then((data) => {
+			var ws = new WebSocket("ws://localhost:8000/game");
+			ws.onopen = function() {
+				ws.send("Hello, world");
+				sessionStorage.setItem("websocket", ws);
+				console.log(data);
+				sessionStorage.setItem(data.game_id, data.player_id);
+				window.location.href = "lobby.html?id=" + data.game_id;
+			};
+		})
 	.catch((error) => {
 		console.error("There was a problem with the fetch operation:", error);
 	});
@@ -162,8 +167,13 @@ function createGameButton() {
 			return response.json();
 		})
 		.then((data) => {
-			sessionStorage.setItem(data.game_id, data.player_id)
-			window.location.href = "lobby.html?id=" + data.game_id;
+			var ws = new WebSocket("ws://localhost:8000/game");
+			ws.onopen = function() {
+				sessionStorage.setItem("websocket", ws);
+				console.log(data);
+				sessionStorage.setItem(data.game_id, data.player_id);
+				window.location.href = "lobby.html?id=" + data.game_id;
+			};
 		})
 		.catch((error) => {
 			console.error("There was a problem with the fetch operation:", error);
@@ -206,10 +216,13 @@ function loadLobby() {
 	.then((data) => {
 		console.log("Data received:", data);
 
+		
 		const gameIdSpan = document.getElementById("gameId");
 		const playerListDiv = document.getElementById("playerList");
 		const playerNames = data.player_names;
 		const playerCount = document.getElementById("playerCount");
+		const ws = sessionStorage.getItem("websocket");
+
 		
 		playerCount.textContent = playerNames.length + "/10";
 		gameIdSpan.textContent = gameId;
@@ -219,6 +232,10 @@ function loadLobby() {
 			const playerElement = document.createElement("p");
 			playerElement.textContent = playerName;
 			playerListDiv.appendChild(playerElement);
+		}
+		ws.onmessage = function(event) {
+			console.log("Message received:", event.data)
+			loadLobby();
 		}
 
 	})

@@ -55,18 +55,14 @@ class SelectCardRequest(BaseModel):
 connected_websockets: List[WebSocket] = []
 
 # When a new user joins a game all connected websockets will be notified
-@app.websocket("/update")
+@app.websocket("/game")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
+    logger.debug(f"Websocket {websocket.client} connected")
     connected_websockets.append(websocket)
-    try:
-        while True:
-            data = await websocket.receive_text()
-            for current_websocket in connected_websockets:
-                await current_websocket.send_text(f"Message text was: {data}")
-    except WebSocketDisconnect:
-        connected_websockets.remove(websocket)
-        logger.debug(f"Websocket {websocket.client} disconnected")
+    for ws in connected_websockets:
+        logger.debug(f"Sending message to {ws.client}")
+        await ws.send_json({"message": "New user joined"})
 
 @app.get("/connected_websockets")
 async def get_connected_websockets():
