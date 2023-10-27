@@ -45,17 +45,19 @@ async def websocket_endpoint(websocket: WebSocket):
     """
     Endpoint for the websocket connection
     """
+    # TODO: Add authentication for the websocket connection
     await manager.connect(websocket)
-    logger.debug(f"Connected to websocket {websocket.client}")
+    
     try:
         while True:
+            # TODO: Add if statement to check what type of data is received and handle it accordingly
+            # This will detect if the client has disconnected and remove the websocket from the active connections
             data = await websocket.receive_text()
             logger.debug(f"Received data from websocket {websocket.client}: {data}")
-            await manager.broadcast(f"Client says: {data}")
 
     except WebSocketDisconnect:
-        logger.debug(f"Disconnected websocket {websocket.client}")
         manager.disconnect(websocket)
+        logger.debug(f"Disconnected websocket {websocket.client}")
 
 
 @app.get("/connected_websockets")
@@ -108,8 +110,8 @@ async def join_game(join_id_request: JoinGameRequest) -> Union[dict, None]:
     if len(game.players) >= 10:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Game is full")
 
-    # Broadcast that a player has joined the game to all connected websockets
-    await manager.broadcast(f"Player {player_name} has joined the game")
+    # Broadcast that a player has joined the game to all connected websockets which runs the loadLobby function
+    await manager.broadcast("new_player")
     logger.debug("Broadcasted that a player has joined the game")
     # Add the player to the game and get their ID
     player_id = game.add_player(player_name)

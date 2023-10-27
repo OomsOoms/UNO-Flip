@@ -1,10 +1,10 @@
 //const apiUrl = "https://l7sr6hzb-8000.uks1.devtunnels.ms"
-const apiUrl = "http://127.0.0.1:8000";
-//const apiUrl = "http://192.168.0.231:8000";
+//const apiUrl = "http://127.0.0.1:8000";
+const apiUrl = "http://192.168.0.231:8000";
 
 //const WebSocketUrl = "wss://l7sr6hzb-8000.uks1.devtunnels.ms"
-const WebSocketUrl = "ws://127.0.0.1:8000";
-//const WebSocketUrl = "ws://192.168.0.231:8000";
+//const WebSocketUrl = "ws://127.0.0.1:8000";
+const WebSocketUrl = "ws://192.168.0.231:8000";
 
 const gameIdInput = document.getElementById("gameIdInput");
 const usernameInput = document.getElementById("usernameInput");
@@ -17,11 +17,13 @@ function joinGameButton() {
 
 	// Check if the inputs are valid
 	if (checkInput(username, gameId)) {
+		console.log("Invalid input");
 		return;
 	}
 
 	// Check if the game ID is already in the session storage and redirect
 	if (sessionStorage.getItem(gameId)){
+		console.log("Redirecting to previous joined game in session storage");
 		window.location.href = "lobby.html?id=" + gameId;
 		return;
 	}
@@ -42,16 +44,18 @@ function joinGameButton() {
 		body: jsonString,
 	})
 	.then((response) => {
+		console.log("Join game button: " + response.status)
 		if (response.status === 201) {
 			return response.json();
 		} else {
 			// TODO: Show error message send from server
+			console.log("Cannot join game");
 			showNotification("Cannot join game!");
 			throw new Error("Cannot join game!");
 		}
 	})
 	.then((data) => {
-		console.log(data);
+		console.log("Join game API response, redirecting to lobby " + data);
 		sessionStorage.setItem(data.game_id, data.player_id);
 		window.location.href = "lobby.html?id=" + data.game_id;
 	})
@@ -63,7 +67,9 @@ function joinGameButton() {
 // Function to handle the click event for the "Create game" button
 function createGameButton() {
 	var username = usernameInput.value;
+
 	if (checkInput(username, null)) {
+		console.log("Invalid input");
 		return;
 	}
 
@@ -81,10 +87,11 @@ function createGameButton() {
 		body: jsonString,
 	})
 	.then((response) => {
+		console.log("Create game button: " + response.status)
 		return response.json();
 	})
 	.then((data) => {
-			console.log(data);
+		console.log("Create game API response, redirecting to lobby " + data);
 			sessionStorage.setItem(data.game_id, data.player_id);
 			window.location.href = "lobby.html?id=" + data.game_id;
 	})
@@ -100,6 +107,7 @@ function loadLobby() {
 	const playerId = sessionStorage.getItem(gameId); // Fetch the player ID stored under the game ID
 	// Check session storage for the game ID, if it doesn't exist redirect to the index page
 	if (!playerId){
+		console.log("No game ID in session storage, redirecting to index");
 		window.location.href = "index.html";
 		return;
 	}
@@ -110,6 +118,7 @@ function loadLobby() {
 	};
 	var jsonString = JSON.stringify(jsonData);
 	var apiEndpointUrl = apiUrl + "/lobby";
+
 	// Send the request to the server
 	fetch(apiEndpointUrl, {
 		method: "POST",
@@ -119,6 +128,7 @@ function loadLobby() {
 		body: jsonString,
 	})
 	.then((response) => {
+		console.log("Lobby API response: " + response.status)
 		if (response.status === 200) {
 			return response.json();
 		} else {
@@ -127,7 +137,7 @@ function loadLobby() {
 		}
 	})
 	.then((data) => {
-		console.log("Data received:", data);
+		console.log("Lobby data received:", data);
 
 		const gameIdSpan = document.getElementById("gameId");
 		const playerListDiv = document.getElementById("playerList");
@@ -137,6 +147,18 @@ function loadLobby() {
 		playerCount.textContent = playerNames.length + "/10";
 		gameIdSpan.textContent = gameId;
 		playerListDiv.innerHTML = "";
+
+		if (data.is_host) {
+
+			const playerListContainer = document.getElementById("playerListContainer");
+			const startGameButton = document.createElement("button");
+			startGameButton.textContent = "Start Game";
+			startGameButton.id = "startGameButton";
+			startGameButton.onclick = function() {
+				console.log("Start game button clicked");
+			}
+			playerListContainer.appendChild(startGameButton);
+		}
 		
 		for (const playerName of playerNames) {
 			const playerElement = document.createElement("p");
@@ -145,10 +167,13 @@ function loadLobby() {
 		}
 
 		var ws = new WebSocket(WebSocketUrl + "/ws");
-		ws.onmessage = function(event) {
-			console.log("reloading, received: " + event.data);
-			ws.close(); // would otherwise create 2 websockets per player as the server sends the message to all players which creates a second websocket only for the new player
-			loadLobby();
+		ws.onmessage = function (event) {
+			if (event.data === "new_player") {
+				console.log("New player joined, reloading lobby");
+				// Close connection to the server then reload the lobby
+				ws.close();
+				loadLobby();
+			};
 		};
 	})
 	.catch((error) => {
@@ -203,6 +228,3 @@ function checkInput(username, gameId) {
 
 	return usernameEmpty || gameIdEmpty;
 }
-
-
-  

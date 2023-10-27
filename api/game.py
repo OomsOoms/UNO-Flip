@@ -51,6 +51,16 @@ class Game:
             self.players[player_id] = Player(self, player_name)
             logger.info(f"Added player: {player_name} {player_id} to game {self.game_id}")
             return player_id
+        
+        def remove_player(self, player_id: str) -> None:
+            """
+            Removes a player from the game.
+
+            :param player_id: ID of the player to remove.
+            :type player_id: str
+            """
+            del self.players[player_id]
+            logger.info(f"Removed player: {player_id} from game {self.game_id}")
 
         def start_game(self):
             """
