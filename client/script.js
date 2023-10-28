@@ -1,10 +1,10 @@
-const apiUrl = "https://l7sr6hzb-8000.uks1.devtunnels.ms"
+//const apiUrl = "https://l7sr6hzb-8000.uks1.devtunnels.ms"
 //const apiUrl = "http://127.0.0.1:8000";
-//const apiUrl = "http://192.168.0.231:8000";
+const apiUrl = "http://192.168.0.196:8000";
 
-const WebSocketUrl = "wss://l7sr6hzb-8000.uks1.devtunnels.ms"
+//const WebSocketUrl = "wss://l7sr6hzb-8000.uks1.devtunnels.ms"
 //const WebSocketUrl = "ws://127.0.0.1:8000";
-//const WebSocketUrl = "ws://192.168.0.231:8000";
+const WebSocketUrl = "ws://192.168.0.196:8000";
 
 const gameIdInput = document.getElementById("gameIdInput");
 const usernameInput = document.getElementById("usernameInput");

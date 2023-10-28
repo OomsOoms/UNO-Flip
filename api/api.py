@@ -2,7 +2,6 @@ from fastapi import FastAPI, HTTPException, status, WebSocket, WebSocketDisconne
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from typing import Union # Used when a function can return multiple types
-import asyncio
 
 from api.game import Game
 from api.request_model import *

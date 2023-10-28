@@ -8,6 +8,7 @@ The project is currently in early development, so there is no way to run the gam
 - Python 3.x
 - FastAPI
 - Uvicorn
+- Websockets
 
 ## Features
 The project will include features such as:

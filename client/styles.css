@@ -8,7 +8,7 @@ body {
   background-color: rgb(25, 25, 25);
   font-family: Arial, sans-serif;
   color: white;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 div {
   margin: 10px 0;
@@ -115,8 +115,6 @@ input {
   flex: 1;
   margin: 0;
 }
-
-/* Center the loader */
 #loader {
   position: absolute;
   left: 50%;
@@ -135,7 +133,6 @@ input {
   border-bottom: 16px solid green;
   border-left: 16px solid red;
 }
-
 @-webkit-keyframes spin {
   0% {
     -webkit-transform: rotate(0deg);
@@ -144,7 +141,6 @@ input {
     -webkit-transform: rotate(360deg);
   }
 }
-
 @keyframes spin {
   0% {
     transform: rotate(0deg);
