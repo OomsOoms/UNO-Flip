@@ -4,21 +4,23 @@
   <title>Game Lobby</title>
   <link rel="stylesheet" type="text/css" href="styles.css" />
 </head>
-<body>
-  <div id="lobbyContainer">
+<body onload="loadLobby()">
+
+  <div id="loader"></div>
+
+  <div id="lobbyContainer" style="display: none;">
     <h1>Game Lobby</h1>
     <div id="gameInfo">
-      <p><strong>Players:</strong> <span id="playerCount">1/10</span> | <strong>ID:</strong> <span id="gameId" class="large"></span></p>
+      <p><strong>Players:</strong> <span id="playerCount">/10</span> | <strong>ID:</strong> <span id="gameId" class="large"></span></p>
     </div>
   </div>
 
-  <div id="playerListContainer">
+  <div id="playerListContainer" style="display: none;">
     <ul id="playerList">
         
     </ul>
   </div>
 
   <script src="script.js"></script>
-  <script>window.onload = loadLobby()</script>
 </body>
 </html>

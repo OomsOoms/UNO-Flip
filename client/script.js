@@ -1,10 +1,10 @@
-//const apiUrl = "https://l7sr6hzb-8000.uks1.devtunnels.ms"
+const apiUrl = "https://l7sr6hzb-8000.uks1.devtunnels.ms"
 //const apiUrl = "http://127.0.0.1:8000";
-const apiUrl = "http://192.168.0.231:8000";
+//const apiUrl = "http://192.168.0.231:8000";
 
-//const WebSocketUrl = "wss://l7sr6hzb-8000.uks1.devtunnels.ms"
+const WebSocketUrl = "wss://l7sr6hzb-8000.uks1.devtunnels.ms"
 //const WebSocketUrl = "ws://127.0.0.1:8000";
-const WebSocketUrl = "ws://192.168.0.231:8000";
+//const WebSocketUrl = "ws://192.168.0.231:8000";
 
 const gameIdInput = document.getElementById("gameIdInput");
 const usernameInput = document.getElementById("usernameInput");
@@ -138,6 +138,14 @@ function loadLobby() {
 	})
 	.then((data) => {
 		console.log("Lobby data received:", data);
+
+		const loader = document.getElementById("loader");
+		const playerListContainer = document.getElementById("playerListContainer");
+		const lobbyContainer = document.getElementById("lobbyContainer");
+
+		loader.style.display = "none";
+		playerListContainer.style.display = "block";
+		lobbyContainer.style.display = "block";
 
 		const gameIdSpan = document.getElementById("gameId");
 		const playerListDiv = document.getElementById("playerList");
