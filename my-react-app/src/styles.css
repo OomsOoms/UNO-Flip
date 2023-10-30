@@ -12,12 +12,17 @@ body {
 }
 div {
   margin: 10px 0;
+  padding: 4px 0;
+}
+h1 {
+  text-align: center;
 }
 p {
   font-size: 20px;
   font-weight: bold;
   margin: 0;
   padding: 0;
+  text-align: center;
 }
 button {
   background-color: rgb(70, 70, 70);
@@ -76,31 +81,7 @@ input {
 #playerList {
   padding: 10px 20px;
 }
-.notification {
-  display: none;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  background-color: rgb(100, 0, 0);
-  color: #fff;
-  text-align: center;
-  z-index: 1000;
-}
-.notification-content {
-  padding: 10px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.close-btn {
-  font-size: 20px;
-  cursor: pointer;
-}
-#notification-message {
-  flex: 1;
-  margin: 0;
-}
+
 #loader {
   position: absolute;
   left: 50%;
