@@ -1,7 +1,10 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import "./styles.css";
+import "./index.css";
 import JoinGame from "./joinGame.js"
+
+const apiUrl = "http://127.0.0.1:8000";
+export default apiUrl;
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<JoinGame />);

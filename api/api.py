@@ -81,7 +81,6 @@ async def create_game(create_game_request: CreateGameRequest) -> dict:
     player_id = game.add_player(player_name)
     return JSONResponse(content={"game_id": game.game_id, "player_id": player_id}, status_code=status.HTTP_201_CREATED)
 
-
 @app.post("/join_game")
 async def join_game(join_id_request: JoinGameRequest) -> Union[dict, None]:
     """
@@ -122,7 +121,7 @@ async def lobby(lobby_request: LobbyRequest) -> Union[dict, None]:
     """
     Handles lobby-related requests.
 
-    Retrieves player names and host status based on the lobby request
+    Retrieves player names and host status based on the lobby requestso
 
     Args:
         lobby_request (LobbyRequest): The lobby request object
