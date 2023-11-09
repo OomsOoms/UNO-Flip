@@ -1,13 +1,29 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import "./index.css";
-import JoinGame from "./joinGame.js"
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import "./styles/index.css";
+import Header from "./pages/header.js"; // import the header component
+import JoinGame from "./pages/joinGame.js";
+import NoPage from "./pages/noPage";
 
 const apiUrl = "http://127.0.0.1:8000";
 export default apiUrl;
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<JoinGame />);
+function App() {
+  return (
+    <BrowserRouter>
+      <Header />
+      <Routes>
+        <Route path="/" element={<JoinGame />} />
+        <Route path="*" element={<NoPage />} />
+        <Route path="/join-game" element={<JoinGame />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
 
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))

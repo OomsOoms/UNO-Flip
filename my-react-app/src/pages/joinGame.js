@@ -1,25 +1,34 @@
 import React from "react";
-import "./joinGame.css";
-import apiUrl from "./index.js";
-import showNotification from "./notification.js"; // close notif doesnt work when importing like this
+import "../styles/joinGame.css";
+import apiUrl from "../index.js";
 
 function JoinGameForm() {
+  // Handle form submission
   const handleSubmit = (event) => {
     event.preventDefault();
 
+    // Get input values
     const usernameInput = document.getElementById("usernameInput");
-    const gameIdInput = document.getElementById("gameIdInput");
     const username = usernameInput.value;
-    const gameId = gameIdInput.value;
+    const gameIdInput = document.getElementById("gameIdInput");
+    const gameId = parseInt(gameIdInput.value);
 
-    if (usernameInput.value && gameIdInput.value) {
-      // Check if the game ID is already in the session storage and redirect
-      if (sessionStorage.getItem(gameId)) {
-        console.log("Redirecting to previous joined game in session storage");
-        window.location.href = "lobby.html?id=" + gameId;
-        return;
-      }
+    // Check if game ID is a number
+    if (isNaN(gameId)) {
+      console.log("Game ID must be a number");
+      return;
+    }
 
+    // Check if the game ID is already in the session storage and redirect
+    if (sessionStorage.getItem(gameId)) {
+      console.log("Redirecting to previous joined game in session storage");
+      window.location.href = "lobby.html?id=" + gameId;
+      return;
+    }
+
+    // Check if the username and game ID are not empty
+    if (username && gameId) {
+      // Send a POST request to the server to create a new player
       fetch(apiUrl + "/join_game", {
         method: "POST",
         headers: {
@@ -30,24 +39,29 @@ function JoinGameForm() {
           player_name: username,
         }),
       })
+        // Check the response status
         .then((response) => {
           console.log("Join game button: " + response.status);
           if (response.status === 201) {
+            // 201 PLayer created
             return response.json();
           } else {
-            // TODO: Show error message sent from server
             throw new Error("Cannot join game!");
           }
         })
+        // Redirect to the lobby page
         .then((data) => {
           console.log("Join game API response, redirecting to lobby, adding game ID to session storage " + data);
           sessionStorage.setItem(data.game_id, data.player_id);
           window.location.href = "lobby.html?id=" + data.game_id;
         })
+        // Catch any errors and log them to the console
         .catch((error) => {
-          showNotification("Cannot join game!, no reason yet because its not been coded yet");
+          //TODO: Show error message sent from server as notification
+          console.log(error);
         });
     } else {
+      // Make the input boxes red for 1 second if they are empty
       if (!usernameInput.value) {
         usernameInput.style.borderColor = "red";
       }
@@ -90,7 +104,8 @@ function CreateGameForm() {
   );
 }
 
-function JoinGame() {
+
+const JoinGame = () => {
   return (
     <>
       <h1>Join Game</h1>
@@ -98,17 +113,12 @@ function JoinGame() {
       <JoinGameForm />
 
       <p>or</p>
-      <h1>Create Game</h1>
-      <CreateGameForm />
 
-      <div className="notification">
-        <div className="notification-content">
-          <span className="close-btn">&times;</span>
-          <p id="notification-message">This is a notification message.</p>
-        </div>
-      </div>
+      <h1>Create Game</h1>
+
+      <CreateGameForm />
     </>
   );
-}
+};
 
 export default JoinGame;
