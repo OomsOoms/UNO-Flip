@@ -1,6 +1,6 @@
 import React from "react";
-import "../styles/joinGame.css";
-import apiUrl from "../index.js";
+import "../styles/enterGameForms.css";
+import { apiUrl } from "../index.js";
 
 function CreateGameForm() {
   // Handle form submission
@@ -12,7 +12,7 @@ function CreateGameForm() {
 
     // Check if the username is empty
     if (username) {
-      // Send a POST request to the server to create a new player
+      // Send a POST request to the server to create a new player and game
       fetch(apiUrl + "/create_game", {
         method: "POST",
         headers: {
@@ -31,7 +31,7 @@ function CreateGameForm() {
         .then((data) => {
           console.log("Create game API response, redirecting to lobby " + data);
           sessionStorage.setItem(data.game_id, data.player_id);
-          window.location.href = "lobby.html?id=" + data.game_id;
+          window.location.href = "lobby?id=" + data.game_id;
         })
         // Catch any errors and log them to the console
         .catch((error) => {

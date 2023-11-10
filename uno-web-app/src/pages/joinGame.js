@@ -1,6 +1,6 @@
 import React from "react";
-import "../styles/joinGame.css";
-import apiUrl from "../index.js";
+import "../styles/enterGameForms.css";
+import { apiUrl } from "../index.js";
 
 function JoinGameForm() {
   // Handle form submission
@@ -22,7 +22,7 @@ function JoinGameForm() {
     // Check if the game ID is already in the session storage and redirect
     if (sessionStorage.getItem(gameId)) {
       console.log("Redirecting to previous joined game in session storage");
-      window.location.href = "lobby.html?id=" + gameId;
+      window.location.href = "lobby?id=" + gameId;
       return;
     }
 
@@ -53,7 +53,7 @@ function JoinGameForm() {
         .then((data) => {
           console.log("Join game API response, redirecting to lobby, adding game ID to session storage " + data);
           sessionStorage.setItem(data.game_id, data.player_id);
-          window.location.href = "lobby.html?id=" + data.game_id;
+          window.location.href = "lobby?id=" + data.game_id;
         })
         // Catch any errors and log them to the console
         .catch((error) => {
@@ -95,7 +95,5 @@ function JoinGameForm() {
     </>
   );
 }
-
-
 
 export default JoinGameForm;
