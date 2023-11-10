@@ -1,25 +1,18 @@
 #lobbyContainer {
-    font-size: 25px;
-    font-weight: bold;
-    text-align: center;
-    border: 2px solid rgb(70, 70, 70);
-    border-radius: 50px;
-    width: 90%;
-    padding: 10px 20px;
-    margin-top: 65px;
+  width: 90%;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 25px;
+  font-weight: bold;
+  text-align: center;
+  border: 2px solid rgb(70, 70, 70);
+  border-radius: 50px;
 }
-#lobbyContainer {
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
+#playerListContainer {
+  text-align: center;
 }
-  #playerListContainer {
-    position: absolute;
-    top: 200px;
-    width: 100%;
-    text-align: center;
-  }
-  #playerList {
-    padding: 10px 20px;
-  }
+#playerList {
+  padding: 10px 20px;
+}

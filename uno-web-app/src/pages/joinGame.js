@@ -1,58 +1,55 @@
-import React from "react";
+import React, { useState } from "react";
 import "../styles/enterGameForms.css";
 import { apiUrl } from "../index.js";
 
 function JoinGameForm() {
-  // Handle form submission
+  const [username, setUsername] = useState("");
+  const [usernameStyle, setUsernameStyle] = useState("");
+  const [gameId, setGameId] = useState("");
+  const [gameIdStyle, setgameIdStyle] = useState("");
+
   const handleSubmit = (event) => {
     event.preventDefault();
 
-    // Get input values
-    const usernameInput = document.getElementById("usernameInput");
-    const username = usernameInput.value;
-    const gameIdInput = document.getElementById("gameIdInput");
-    const gameId = parseInt(gameIdInput.value);
-
-    // Check if game ID is a number
     if (isNaN(gameId)) {
       console.log("Game ID must be a number");
       return;
     }
-
-    // Check if the game ID is already in the session storage and redirect
     if (sessionStorage.getItem(gameId)) {
       console.log("Redirecting to previous joined game in session storage");
       window.location.href = "lobby?id=" + gameId;
       return;
     }
+    if (username && parseInt(gameId)) {
+      const requestBody = {
+        game_id: gameId,
+        player_name: username,
+      };
 
-    // Check if the username and game ID are not empty
-    if (username && gameId) {
-      // Send a POST request to the server to create a new player
-      fetch(apiUrl + "/join_game", {
+      const options = {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          game_id: gameId,
-          player_name: username,
-        }),
-      })
-        // Check the response status
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody),
+      };
+
+      const url = apiUrl + "/join_game";
+
+      fetch(url, options)
         .then((response) => {
-          console.log("Join game button: " + response.status);
+          console.log(`Join game button: ${response.status}`);
           if (response.status === 201) {
-            // 201 PLayer created
+            // If the response status is 201, the player was created successfully)
             return response.json();
           } else {
+            // If the response status is not 201, throw an error
             throw new Error("Cannot join game!");
           }
         })
-        // Redirect to the lobby page
         .then((data) => {
-          console.log("Join game API response, redirecting to lobby, adding game ID to session storage " + data);
+          console.log("Redirecting to lobby, adding game ID to session storage");
+          // Add the game ID and player ID to session storage
           sessionStorage.setItem(data.game_id, data.player_id);
+          // Redirect the user to the lobby page with the game ID as a query parameter
           window.location.href = "lobby?id=" + data.game_id;
         })
         // Catch any errors and log them to the console
@@ -61,16 +58,15 @@ function JoinGameForm() {
           console.log(error);
         });
     } else {
-      // Make the input boxes red for 1 second if they are empty
-      if (!usernameInput.value) {
-        usernameInput.style.borderColor = "red";
+      if (!username) {
+        setUsernameStyle("red");
       }
-      if (!gameIdInput.value) {
-        gameIdInput.style.borderColor = "red";
+      if (!gameId) {
+        setgameIdStyle("red");
       }
       setTimeout(() => {
-        usernameInput.style.borderColor = "rgb(70, 70, 70)";
-        gameIdInput.style.borderColor = "rgb(70, 70, 70)";
+        setUsernameStyle("");
+        setgameIdStyle("");
       }, 1000);
       return;
     }
@@ -81,10 +77,10 @@ function JoinGameForm() {
       <h1>Join Game</h1>
       <form onSubmit={handleSubmit}>
         <div>
-          <input type="text" placeholder="Username" id="usernameInput" />
+          <input type="text" placeholder="Username" className={usernameStyle} value={username} onChange={(event) => setUsername(event.target.value)} />
         </div>
         <div>
-          <input type="text" placeholder="Game ID" id="gameIdInput" />
+          <input type="text" placeholder="Game ID" className={gameIdStyle} value={gameId} onChange={(event) => setGameId(event.target.value)} />
         </div>
         <div>
           <button type="submit" id="joinGameButton">
