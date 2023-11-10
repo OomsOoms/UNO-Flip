@@ -1,49 +1,53 @@
-import React from "react";
-import "../styles/enterGameForms.css";
+import React, { useState } from "react";
+import "../sass/enterGameForms.scss";
 import { apiUrl } from "../index.js";
 
 function CreateGameForm() {
-  // Handle form submission
+  document.title = "UNO | Create Game"
+  // Create a state variable for the username
+  const [username, setUsername] = useState("");
+  const [usernameStyle, setUsernameStyle] = useState("enterGameInput");
+
+  // Handle the form submission
   const handleSubmit = (event) => {
     event.preventDefault();
-
-    const usernameInput = document.getElementById("usernameInput");
-    const username = usernameInput.value;
-
-    // Check if the username is empty
+    // If the username is not empty create a POST request to send to the server
     if (username) {
-      // Send a POST request to the server to create a new player and game
-      fetch(apiUrl + "/create_game", {
+      const requestBody = {
+        player_name: username,
+      };
+
+      const options = {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          player_name: username,
-        }),
-      })
-        // Check the response status
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody),
+      };
+
+      const url = apiUrl + "/create_game";
+      // Send the POST request to the server
+      fetch(url, options)
         .then((response) => {
           console.log("Create game button: " + response.status);
           return response.json();
         })
-        // Redirect to the lobby page
         .then((data) => {
-          console.log("Create game API response, redirecting to lobby " + data);
+          console.log("Redirecting to lobby, added game ID to session storage");
+          // Add the game ID and player ID to session storage
           sessionStorage.setItem(data.game_id, data.player_id);
+          // Redirect the user to the lobby page with the game ID as a query parameter
           window.location.href = "lobby?id=" + data.game_id;
         })
-        // Catch any errors and log them to the console
         .catch((error) => {
+          //TODO: Show error message sent from server as notification
           console.error("There was a problem with the fetch operation:", error);
         });
     } else {
-      // Make the input boxes red for 1 second if they are empty
-      if (!usernameInput.value) {
-        usernameInput.style.borderColor = "red";
+      // If the username is empty, add a red border to the input field for 1 second
+      if (!username) {
+        setUsernameStyle("enterGameInput redBorder");
       }
       setTimeout(() => {
-        usernameInput.style.borderColor = "rgb(70, 70, 70)";
+        setUsernameStyle("enterGameInput");
       }, 1000);
       return;
     }
@@ -54,10 +58,10 @@ function CreateGameForm() {
       <h1>Create Game</h1>
       <form onSubmit={handleSubmit}>
         <div>
-          <input type="text" placeholder="Username" id="usernameInput" />
+          <input type="text" placeholder="Username" className={usernameStyle} value={username} onChange={(event) => setUsername(event.target.value)} />
         </div>
         <div>
-          <button type="submit" id="createGameButton">
+          <button type="submit" className={"enterGameInput"} id="joinGameButton">
             Create!
           </button>
         </div>

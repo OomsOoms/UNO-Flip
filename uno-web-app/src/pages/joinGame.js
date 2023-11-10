@@ -1,26 +1,30 @@
 import React, { useState } from "react";
-import "../styles/enterGameForms.css";
+import "../sass/enterGameForms.scss";
 import { apiUrl } from "../index.js";
 
 function JoinGameForm() {
+  document.title = "UNO | Create Game";
+  // Create state variables for the username and game ID
   const [username, setUsername] = useState("");
-  const [usernameStyle, setUsernameStyle] = useState("");
+  const [usernameStyle, setUsernameStyle] = useState("enterGameInput");
   const [gameId, setGameId] = useState("");
-  const [gameIdStyle, setgameIdStyle] = useState("");
+  const [gameIdStyle, setgameIdStyle] = useState("enterGameInput");
 
+  // Handle the form submission
   const handleSubmit = (event) => {
     event.preventDefault();
-
-    if (isNaN(gameId)) {
-      console.log("Game ID must be a number");
-      return;
-    }
+    // Check if the game ID is in session storage and redirect to the lobby if it is
     if (sessionStorage.getItem(gameId)) {
       console.log("Redirecting to previous joined game in session storage");
       window.location.href = "lobby?id=" + gameId;
       return;
     }
+    // If the username and game ID are not empty, create a POST request to send to the server
     if (username && parseInt(gameId)) {
+      if (isNaN(gameId)) {
+        console.log("Game ID must be a number");
+        return;
+      }
       const requestBody = {
         game_id: gameId,
         player_name: username,
@@ -33,7 +37,7 @@ function JoinGameForm() {
       };
 
       const url = apiUrl + "/join_game";
-
+      // Send the POST request to the server
       fetch(url, options)
         .then((response) => {
           console.log(`Join game button: ${response.status}`);
@@ -46,7 +50,7 @@ function JoinGameForm() {
           }
         })
         .then((data) => {
-          console.log("Redirecting to lobby, adding game ID to session storage");
+          console.log("Redirecting to lobby, added game ID to session storage");
           // Add the game ID and player ID to session storage
           sessionStorage.setItem(data.game_id, data.player_id);
           // Redirect the user to the lobby page with the game ID as a query parameter
@@ -58,15 +62,16 @@ function JoinGameForm() {
           console.log(error);
         });
     } else {
+      // If the username or game ID are empty, add a red border to the input field for 1 second
       if (!username) {
-        setUsernameStyle("red");
+        setUsernameStyle("enterGameInput redBorder");
       }
       if (!gameId) {
-        setgameIdStyle("red");
+        setgameIdStyle("enterGameInput redBorder");
       }
       setTimeout(() => {
-        setUsernameStyle("");
-        setgameIdStyle("");
+        setUsernameStyle("enterGameInput");
+        setgameIdStyle("enterGameInput");
       }, 1000);
       return;
     }
@@ -83,7 +88,7 @@ function JoinGameForm() {
           <input type="text" placeholder="Game ID" className={gameIdStyle} value={gameId} onChange={(event) => setGameId(event.target.value)} />
         </div>
         <div>
-          <button type="submit" id="joinGameButton">
+          <button type="submit" className={"enterGameInput"} id="joinGameButton">
             Join!
           </button>
         </div>

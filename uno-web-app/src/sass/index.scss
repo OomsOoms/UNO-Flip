@@ -1,0 +1,53 @@
+$dark-grey: #191919;
+$light-grey: #464646;
+
+@mixin font {
+  font: {
+    family: Arial, sans-serif;
+    weight: bold;
+    size: 20px;
+  }
+  text-align: center;
+  text-overflow: hidden;
+  color: white;
+}
+@mixin input-style {
+  border: 2px solid $light-grey;
+  border-radius: 5px;
+  padding: 10px 20px;
+  height: 50px;
+  box-sizing: border-box;
+}
+body {
+  background-color: $dark-grey;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  margin: 0;
+  overflow: hidden;
+  @include font;
+}
+input {
+  background-color: $dark-grey;
+  @include input-style;
+  @include font;
+}
+button {
+  background-color: $light-grey;
+  @include input-style;
+  @include font;
+  &:hover {
+    background-color: rgba(70, 70, 70, 0.8);
+    transition: background-color 0.3s;
+  }
+  &:active {
+    background-color: rgba(70, 70, 70, 0.5);
+  }
+}
+div {
+  margin: 10px 0;
+  padding: 5px 0;
+}
+

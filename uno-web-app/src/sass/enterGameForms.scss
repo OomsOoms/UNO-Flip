@@ -1,0 +1,8 @@
+.enterGameInput {
+  width: 350px;
+  transition: border-color 0.5s ease;
+
+  &.redBorder {
+    border-color: red;
+  }
+}

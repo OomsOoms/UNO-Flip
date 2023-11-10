@@ -1,29 +1,40 @@
 import React from "react";
-import "../styles/gameLobby.css";
+import "../sass/gameLobby.css";
 import { apiUrl } from "../index.js";
 
 function GameLobby() {
   // Get the values from the URL
   const urlParams = new URLSearchParams(window.location.search);
   const gameId = urlParams.get("id");
-  const playerId = sessionStorage.getItem(gameId); // Fetch the player ID stored under the game ID
-  // Check session storage for the game ID, if it doesn't exist redirect to the index page
+  const playerId = sessionStorage.getItem(gameId);
+  document.title = "UNO | Lobby " + gameId;
+
   if (!playerId) {
-    throw new Error("No game ID in session storage for this game ID");    
+    console.log("No game ID in session storage for this game ID");
+
+    if (document.referrer.includes(window.location.origin)) {
+      window.history.back();
+    } else {
+      window.location.href = "/";
+    }
+    return;
   }
-  document.title = "Game Lobby | " + gameId;
 
   // Send the request to the server
-  fetch(apiUrl + "/lobby", {
+  const requestBody = {
+    game_id: gameId,
+    player_id: playerId,
+  };
+
+  const options = {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      game_id: gameId,
-      player_id: playerId,
-    }),
-  })
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(requestBody),
+  };
+
+  const url = apiUrl + "/lobby";
+  // Send the POST request to the server
+  fetch(url, options)
     // Check the response status
     .then((response) => {
       console.log("Lobby API response: " + response.status);
@@ -65,7 +76,6 @@ function GameLobby() {
     // Catch any errors and log them to the console
     .catch((error) => {
       console.error("There was a problem with the fetch operation:", error);
-      window.location.href = "join-game";
     });
 
   return (
