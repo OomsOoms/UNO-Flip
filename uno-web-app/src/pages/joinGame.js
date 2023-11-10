@@ -77,48 +77,25 @@ function JoinGameForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <div>
-        <input type="text" placeholder="Username" id="usernameInput" />
-      </div>
-      <div>
-        <input type="text" placeholder="Game ID" id="gameIdInput" />
-        <button type="submit" id="joinGameButton">
-          Join!
-        </button>
-      </div>
-    </form>
-  );
-}
-
-function CreateGameForm() {
-  return (
-    <form>
-      <div>
-        <input placeholder="Username" id="usernameInput" />
-      </div>
-      <div>
-        <button id="createGameButton">Create Game</button>
-      </div>
-    </form>
-  );
-}
-
-
-const JoinGame = () => {
-  return (
     <>
       <h1>Join Game</h1>
-
-      <JoinGameForm />
-
-      <p>or</p>
-
-      <h1>Create Game</h1>
-
-      <CreateGameForm />
+      <form onSubmit={handleSubmit}>
+        <div>
+          <input type="text" placeholder="Username" id="usernameInput" />
+        </div>
+        <div>
+          <input type="text" placeholder="Game ID" id="gameIdInput" />
+        </div>
+        <div>
+          <button type="submit" id="joinGameButton">
+            Join!
+          </button>
+        </div>
+      </form>
     </>
   );
-};
+}
 
-export default JoinGame;
+
+
+export default JoinGameForm;

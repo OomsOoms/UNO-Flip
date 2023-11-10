@@ -1,14 +1,3 @@
-#gameIdInput {
-  width: 250px;
-  border-radius: 5px 0 0 5px; /* Overwrite the default 4 rounded corners */
-}
-#usernameInput {
-  width: 350px;
-}
-#joinGameButton {
-  border-radius: 0 5px 5px 0;
-  width: 100px;
-}
-#createGameButton {
+#gameIdInput, #usernameInput, #joinGameButton, #createGameButton {
   width: 350px;
 }

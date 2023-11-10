@@ -2,8 +2,10 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import "./styles/index.css";
-import Header from "./pages/header.js"; // import the header component
-import JoinGame from "./pages/joinGame.js";
+import Header from "./pages/header.js";
+import Home from "./pages/home.js";
+import JoinGameForm from "./pages/joinGame.js";
+import CreateGame from "./pages/createGame.js";
 import NoPage from "./pages/noPage";
 
 const apiUrl = "http://127.0.0.1:8000";
@@ -14,9 +16,10 @@ function App() {
     <BrowserRouter>
       <Header />
       <Routes>
-        <Route path="/" element={<JoinGame />} />
+        <Route path="/" element={<Home />} />
         <Route path="*" element={<NoPage />} />
-        <Route path="/join-game" element={<JoinGame />} />
+        <Route path="/join-game" element={<JoinGameForm />} />
+        <Route path="/create-game" element={<CreateGame />} />
       </Routes>
     </BrowserRouter>
   );

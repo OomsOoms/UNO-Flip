@@ -10,6 +10,12 @@ function Header() {
           <li>
             <Link to="/">Home</Link>
           </li>
+          <li>
+            <Link to="/join-game">Join Game</Link>
+          </li>
+          <li>
+            <Link to="/create-game">Create Game</Link>
+          </li>
         </ul>
       </nav>
     </header>
