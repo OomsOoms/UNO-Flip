@@ -19,6 +19,7 @@ class Game:
 
         def __init__(self) -> None:
             self.game_id = randint(100000, 999999)
+            # Dictionary to store player objects with their IDs as keys
             self.players = {}
             self.deck = Deck(self)
             self.game_direction = 1

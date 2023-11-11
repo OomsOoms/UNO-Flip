@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import "../sass/enterGameForms.scss";
+import "../scss/enterGameForms.scss";
 import { apiUrl } from "../index.js";
 
 function CreateGameForm() {

@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import "./sass/index.scss";
+import "./scss/index.scss";
 import Header from "./pages/header.js";
 import Home from "./pages/home.js";
 import JoinGameForm from "./pages/joinGame.js";

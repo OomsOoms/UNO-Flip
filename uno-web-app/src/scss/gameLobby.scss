@@ -11,7 +11,16 @@
   border-radius: 50px;
 }
 #playerListContainer {
-  text-align: center;
+  width: 90%;
+  position: absolute;
+  top: 35%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+#startGameButton {
+  position: absolute;
+  top: 50px;
+  right: 0;
 }
 #playerList {
   padding: 10px 20px;

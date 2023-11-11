@@ -1,6 +1,6 @@
 import React from "react";
-import "../sass/gameLobby.css";
-import { apiUrl } from "../index.js";
+import "../scss/gameLobby.scss";
+import { apiUrl, webSocketUrl } from "../index.js";
 
 function GameLobby() {
   // Get the values from the URL
@@ -46,7 +46,6 @@ function GameLobby() {
     })
     // Update the lobby page with the game ID and player list with the json returned from the API
     .then((data) => {
-      console.log("Loading lobby " + data);
       const gameIdSpan = document.getElementById("gameId");
       const playerListDiv = document.getElementById("playerList");
       const playerNames = data.player_names;
@@ -58,24 +57,49 @@ function GameLobby() {
 
       if (data.is_host) {
         const playerListContainer = document.getElementById("playerListContainer");
-        const startGameButton = document.createElement("button");
-        startGameButton.textContent = "Start Game";
-        startGameButton.id = "startGameButton";
-        startGameButton.onclick = function () {
-          console.log("Start game button clicked");
-        };
-        playerListContainer.appendChild(startGameButton);
+        let startGameButton = document.getElementById("startGameButton");
+        if (!startGameButton) {
+          startGameButton = document.createElement("button");
+          startGameButton.textContent = "Start Game";
+          startGameButton.id = "startGameButton";
+          startGameButton.onclick = function () {
+            console.log("Start game button clicked");
+          };
+          playerListContainer.appendChild(startGameButton);
+        }
       }
-
       for (const playerName of playerNames) {
         const playerElement = document.createElement("p");
         playerElement.textContent = playerName;
         playerListDiv.appendChild(playerElement);
       }
+      const ws = new WebSocket(`${webSocketUrl}/ws?game_id=${gameId}&player_id=${playerId}`);
+      ws.onopen = () => {
+        console.log("WebSocket connection opened");
+      };
+      ws.onmessage = (event) => {
+        // listen to data sent from the websocket server
+        const message = event.data;
+        if (message === "update_lobby") {
+          console.log("Player change detected, updating lobby");
+          ws.close();
+          GameLobby();
+        }
+      };
+      ws.onclose = () => {
+        console.log("disconnected");
+        // TODO: automatically try to reconnect on connection loss
+      };
     })
     // Catch any errors and log them to the console
     .catch((error) => {
       console.error("There was a problem with the fetch operation:", error);
+      if (document.referrer.includes(window.location.origin)) {
+        window.history.back();
+      } else {
+        window.location.href = "/";
+      }
+      return;
     });
 
   return (

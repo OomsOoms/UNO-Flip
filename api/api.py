@@ -7,6 +7,7 @@ from api.game import Game
 from api.request_model import *
 from api.connection_manager import ConectionManager
 from utils.custom_logger import CustomLogger
+import asyncio
 
 # Create a FastAPI instance, run using: uvicorn api.api:app --reload --host 0.0.0.0
 app = FastAPI(title="UNO API", description="API for the UNO Flip game", version="0.1.0")
@@ -40,29 +41,49 @@ async def root():
     return "Online"
 
 @app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
+async def websocket_endpoint(websocket: WebSocket, game_id: int, player_id: str):
     """
     Endpoint for the websocket connection
     """
-    # TODO: Add authentication for the websocket connection
-    await manager.connect(websocket)
-    
+    # Authenticate the player
+    game = games.get(game_id)
+    if game:
+        if player_id in game.players:
+            await manager.connect(websocket, game_id, player_id)
+            logger.debug(f"Connected websocket {websocket.client}")
+        else:
+            await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+            logger.debug(f"Closed websocket {websocket.client} because the player ID was not found in the game")
+
     try:
         while True:
-            # TODO: Add if statement to check what type of data is received and handle it accordingly
-            # This will detect if the client has disconnected and remove the websocket from the active connections
-            data = await websocket.receive_text()
-            logger.debug(f"Received data from websocket {websocket.client}: {data}")
+            received_data = await websocket.receive_text()
+            logger.debug(f"Received data {received_data} from websocket {websocket.client}")
 
     except WebSocketDisconnect:
+        # Remove the websocket from the active connections after 5 seconds
         manager.disconnect(websocket)
-        logger.debug(f"Disconnected websocket {websocket.client}")
-
+        await asyncio.sleep(5)
+        # TODO: Players connot join back once their player has been deleted, if they join back before there is no problem
+        reconnected = False
+        for connection, [conn_game_id, conn_player_id] in manager.active_connections.items():
+            if conn_game_id == game_id and conn_player_id == player_id:
+                reconnected = True
+        if not reconnected:
+            logger.debug(f"Disconnected websocket {websocket.client} for game {game_id} and player {player_id}")
+            game.players.pop(player_id, None)
+            await manager.broadcast("update_lobby", game_id)
 
 @app.get("/connected_websockets")
 async def get_connected_websockets():
-    return {"connected_websockets": [str(ws.client) for ws in manager.active_connections]}
+    """
+    Endpoint for getting the connected websockets
 
+    Returns:
+        dict: A dictionary containing the connected websockets
+    """
+    connections = str(manager.active_connections)
+    return connections
 
 @app.post("/create_game")
 async def create_game(create_game_request: CreateGameRequest) -> dict:
@@ -109,7 +130,7 @@ async def join_game(join_id_request: JoinGameRequest) -> Union[dict, None]:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Game is full")
 
     # Broadcast that a player has joined the game to all connected websockets which runs the loadLobby function
-    await manager.broadcast("new_player")
+    await manager.broadcast("update_lobby", game.game_id)
     logger.debug("Broadcasted that a player has joined the game")
     # Add the player to the game and get their ID
     player_id = game.add_player(player_name)

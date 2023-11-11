@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import "../sass/enterGameForms.scss";
+import "../scss/enterGameForms.scss";
 import { apiUrl } from "../index.js";
 
 function JoinGameForm() {
-  document.title = "UNO | Create Game";
+  document.title = "UNO | Join Game";
   // Create state variables for the username and game ID
   const [username, setUsername] = useState("");
   const [usernameStyle, setUsernameStyle] = useState("enterGameInput");

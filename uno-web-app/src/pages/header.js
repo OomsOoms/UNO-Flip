@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import "../sass/header.scss";
+import "../scss/header.scss";
 
 function Header() {
   return (
