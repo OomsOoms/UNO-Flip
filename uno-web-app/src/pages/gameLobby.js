@@ -11,6 +11,9 @@ function GameLobby() {
   const [playerNames, setPlayerNames] = useState([]);
   const [isHost, setIsHost] = useState(false);
 
+  const [gameStarted, setGameStarted] = useState(false);
+  const [gameState, setGameState] = useState({});
+
   document.title = "UNO | Lobby " + gameId;
 
   const startGame = () => {
@@ -24,14 +27,6 @@ function GameLobby() {
       body: JSON.stringify(requestbody),
     };
     fetch(`${apiUrl}/start_game`, requestOptions)
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.success) {
-          console.log("Game started successfully" + data.message);
-        } else {
-          console.log("Error:", data.detail);
-        }
-      })
       .catch((error) => console.log("Error:", error));
   };
 
@@ -62,17 +57,18 @@ function GameLobby() {
     };
 
     ws.onmessage = (event) => {
-      console.log("WebSocket message received:", event.data);
-
       const message = JSON.parse(event.data);
 
       switch (message.type) {
         case "lobby":
+          console.log("Lobby message received:", message);
           setPlayerNames(message.player_names);
           setIsHost(message.is_host);
           break;
         case "game_state":
-          console.log(`Game state: ${message.game_state}`);
+          console.log("Game state message received:", message)
+          setGameStarted(true);
+          setGameState(message.game_state);
           break;
         default:
           console.log("Unknown message type:", message.type);
@@ -80,30 +76,41 @@ function GameLobby() {
     };
   }, [gameId, playerId]);
 
+  // TODO: Do this better, I should make these seperate react components and pass though the game data
   return (
     <>
-      <div id="lobbyContainer">
-        <h1>Game Lobby</h1>
-        <div>
-          <p>
-            Players: {playerNames.length}/10 | ID {gameId}
-          </p>
-        </div>
-      </div>
+      {gameStarted && (
+        <>
+          <h1>Game</h1>
+          {JSON.stringify(gameState)}
+        </>
+      )}
+      {!gameStarted && (
+        <>
+          <div id="lobbyContainer">
+            <h1>Game Lobby</h1>
+            <div>
+              <p>
+                Players: {playerNames.length}/10 | ID {gameId}
+              </p>
+            </div>
+          </div>
 
-      <div id="playerListContainer">
-        <ul id="playerList">
-          {playerNames.map((playerName, index) => (
-            <p key={index}>{playerName}</p>
-          ))}
-        </ul>
+          <div id="playerListContainer">
+            <ul id="playerList">
+              {playerNames.map((playerName, index) => (
+                <p key={index}>{playerName}</p>
+              ))}
+            </ul>
 
-        {isHost && (
-          <button id="startGameButton" onClick={startGame}>
-            Start Game
-          </button>
-        )}
-      </div>
+            {isHost && (
+              <button id="startGameButton" onClick={startGame}>
+                Start Game
+              </button>
+            )}
+          </div>
+        </>
+      )}
     </>
   );
 }

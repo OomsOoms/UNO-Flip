@@ -155,20 +155,18 @@ async def start_game(start_game_request: StartGameRequest) -> Union[bool, None]:
     Raises:
         HTTPException: If the game, number of players or host player are invalid for starting the game
     """
-    game = games.get(start_game_request.game_id)
+    game_object = games.get(start_game_request.game_id)
     
     # Check if the game exists or has started and the player is the host
-    if game.started or list(game.players.keys())[0] != start_game_request.player_id:
+    if game_object.started or list(game_object.players.keys())[0] != start_game_request.player_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request to start the game")
 
-    elif len(game.players) < 2:
+    elif len(game_object.players) < 2:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Not enough players to start the game")
     # Set game.started to True to prevent new players from joining and select a card and player
-    game.start_game()
-    logger.debug(f"Starting game {game.game_id} with {len(game.players)} players and host {start_game_request.player_id}")
-    await manager.broadcast({"type": "start_game"}, game.game_id)
-    
-    return JSONResponse(content={"started": True}, status_code=status.HTTP_200_OK)
+    game_object.start_game()
+    logger.debug(f"Starting game {game_object.game_id} with {len(game_object.players)} players and host {start_game_request.player_id}")
+    await manager.update_lobby(game_object)    
 
 @app.post("/select_card")
 async def select_card(select_card_request: SelectCardRequest) -> Union[dict, None]:
