@@ -8,8 +8,8 @@ import JoinGameForm from "./pages/joinGame.js";
 import CreateGame from "./pages/createGame.js";
 import GameLobby from "./pages/gameLobby.js";
 
-const apiUrl = "http://192.168.0.231:8000";
-const webSocketUrl = "ws://192.168.0.231:8000";
+const apiUrl = "http://127.0.0.1:8000";
+const webSocketUrl = "ws://127.0.0.1:8000";
 export { apiUrl, webSocketUrl};
 
 function App() {

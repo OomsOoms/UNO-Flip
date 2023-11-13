@@ -71,6 +71,7 @@ async def websocket_endpoint(websocket: WebSocket, game_id: int, player_id: str)
             
     except WebSocketDisconnect:
         manager.disconnect(websocket)
+        logger.debug("Disconnecting websocket in 5 seconds if not reconnected")
         await asyncio.sleep(5)
 
         if not any(conn_game_id == game_id and conn_player_id == player_id for conn_game_id, conn_player_id in manager.active_connections.values()):
@@ -79,7 +80,7 @@ async def websocket_endpoint(websocket: WebSocket, game_id: int, player_id: str)
             if not game_object.players:
                 games.pop(game_id, None)
                 logger.debug(f"Removed game {game_id} because there are no players left")
-            await manager.broadcast("update_lobby", game_id)
+            await manager.update_lobby(game_object)
 
 @app.get("/connected_websockets")
 async def get_connected_websockets():
@@ -166,6 +167,7 @@ async def start_game(start_game_request: StartGameRequest) -> Union[bool, None]:
     game.start_game()
     logger.debug(f"Starting game {game.game_id} with {len(game.players)} players and host {start_game_request.player_id}")
     await manager.broadcast({"type": "start_game"}, game.game_id)
+    
     return JSONResponse(content={"started": True}, status_code=status.HTTP_200_OK)
 
 @app.post("/select_card")
