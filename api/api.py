@@ -40,38 +40,42 @@ async def root():
     """
     return "Online"
 
-@app.websocket("/ws")
+@app.websocket("/lobby")
 async def websocket_endpoint(websocket: WebSocket, game_id: int, player_id: str):
     """
     Endpoint for the websocket connection
     """
-    # Authenticate the player
     game = games.get(game_id)
-    if game:
-        if player_id in game.players:
-            await manager.connect(websocket, game_id, player_id)
-            logger.debug(f"Connected websocket {websocket.client}")
-        else:
-            await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
-            logger.debug(f"Closed websocket {websocket.client} because the player ID was not found in the game")
+    if game and player_id in game.players:
+        await manager.connect(websocket, game_id, player_id)
+        logger.debug(f"Connected websocket {websocket.client}")
+
+        if game is None or player_id not in game.players:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request to fetch lobby")
+        
+        # will update all clients in the lobby
+        for connection, [conn_game_id, conn_player_id] in manager.active_connections.items():
+            if conn_game_id == game_id and game.started:     
+                await connection.send_json({"type": "game_state", "game_state": game.get_game_state(conn_player_id)})
+            else:   
+                is_host = next(iter(game.players)) == conn_player_id
+                player_names = [player.name for player in game.players.values()]
+                await connection.send_json({"type": "lobby", "player_names": player_names, "is_host": is_host})
 
     try:
         while True:
             received_data = await websocket.receive_text()
-            logger.debug(f"Received data {received_data} from websocket {websocket.client}")
-
+            
     except WebSocketDisconnect:
-        # Remove the websocket from the active connections after 5 seconds
         manager.disconnect(websocket)
         await asyncio.sleep(5)
-        # TODO: Players connot join back once their player has been deleted, if they join back before there is no problem
-        reconnected = False
-        for connection, [conn_game_id, conn_player_id] in manager.active_connections.items():
-            if conn_game_id == game_id and conn_player_id == player_id:
-                reconnected = True
-        if not reconnected:
-            logger.debug(f"Disconnected websocket {websocket.client} for game {game_id} and player {player_id}")
+
+        if not any(conn_game_id == game_id and conn_player_id == player_id for conn_game_id, conn_player_id in manager.active_connections.values()):
             game.players.pop(player_id, None)
+            logger.debug(f"Disconnected websocket {websocket.client} for game {game_id} and player {player_id}")
+            if not game.players:
+                games.pop(game_id, None)
+                logger.debug(f"Removed game {game_id} because there are no players left")
             await manager.broadcast("update_lobby", game_id)
 
 @app.get("/connected_websockets")
@@ -129,42 +133,9 @@ async def join_game(join_id_request: JoinGameRequest) -> Union[dict, None]:
     if len(game.players) >= 10:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Game is full")
 
-    # Broadcast that a player has joined the game to all connected websockets which runs the loadLobby function
-    await manager.broadcast("update_lobby", game.game_id)
-    logger.debug("Broadcasted that a player has joined the game")
     # Add the player to the game and get their ID
     player_id = game.add_player(player_name)
     return JSONResponse(content={"game_id": game.game_id, "player_id": player_id}, status_code=status.HTTP_201_CREATED)
-
-
-@app.post("/lobby")
-async def lobby(lobby_request: LobbyRequest) -> Union[dict, None]:
-    """
-    Handles lobby-related requests.
-
-    Retrieves player names and host status based on the lobby requestso
-
-    Args:
-        lobby_request (LobbyRequest): The lobby request object
-
-    Returns:
-        dict: A dictionary containing player names and host status
-
-    Raises:
-        HTTPException: If lobby_request.game_id is not found in the games dictionary or if the player is not in this game
-    """
-    player_id = lobby_request.player_id
-
-    game = games.get(lobby_request.game_id)
-    
-    if game is None or player_id not in game.players:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request to fetch lobby")
-    
-    is_host = next(iter(game.players)) == player_id
-    player_names = [player.name for player in game.players.values()]
-    logger.debug(f"Requested lobby: Player names: {player_names} is_host: {is_host} player_id: {player_id}")
-    return JSONResponse(content={"player_names": player_names, "is_host": is_host}, status_code=status.HTTP_200_OK)
-
 
 @app.post("/start_game")
 async def start_game(start_game_request: StartGameRequest) -> Union[bool, None]:
@@ -181,7 +152,8 @@ async def start_game(start_game_request: StartGameRequest) -> Union[bool, None]:
         HTTPException: If the game, number of players or host player are invalid for starting the game
     """
     game = games.get(start_game_request.game_id)
-        
+    
+    # Check if the game exists or has started and the player is the host
     if game.started or list(game.players.keys())[0] != start_game_request.player_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request to start the game")
 
@@ -189,31 +161,9 @@ async def start_game(start_game_request: StartGameRequest) -> Union[bool, None]:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Not enough players to start the game")
     # Set game.started to True to prevent new players from joining and select a card and player
     game.start_game()
-    return True
-
-
-@app.post("/get_game_state")
-async def get_game_state(game_state_request: GetGameStateRequest) -> Union[dict, None]:
-    """
-    Handles requests to get the game state.
-
-    Args:
-        game_state_request (GetGameStateRequest): The game state request object.
-
-    Returns:
-        dict or None: A dictionary containing the game state for the specified player.
-
-    Raises:
-        HTTPException: If there's an invalid request to start the game or the game is not found.
-    """
-    player_id = game_state_request.player_id
-    
-    game = games.get(game_state_request.game_id)
-    
-    if game.started and player_id in game.players:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request to start the game")
-    
-    return game.get_game_state(player_id)
+    logger.debug(f"Starting game {game.game_id} with {len(game.players)} players and host {start_game_request.player_id}")
+    await manager.broadcast({"type": "start_game"}, game.game_id)
+    return JSONResponse(content={"started": True}, status_code=status.HTTP_200_OK)
 
 @app.post("/select_card")
 async def select_card(select_card_request: SelectCardRequest) -> Union[dict, None]:

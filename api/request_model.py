@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+# TODO: combinr identical requests into one class
 class CreateGameRequest(BaseModel):
     player_name: str
 

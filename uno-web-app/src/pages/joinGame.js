@@ -13,12 +13,13 @@ function JoinGameForm() {
   // Handle the form submission
   const handleSubmit = (event) => {
     event.preventDefault();
+    // !! Removed as when a player rejoins a game after player is deleted they cannot rejoin, this way it makes a new player and the old one is deleted
     // Check if the game ID is in session storage and redirect to the lobby if it is
-    if (sessionStorage.getItem(gameId)) {
-      console.log("Redirecting to previous joined game in session storage");
-      window.location.href = "lobby?id=" + gameId;
-      return;
-    }
+    //if (sessionStorage.getItem(gameId)) {
+    //  console.log("Redirecting to previous joined game in session storage");
+    //  window.location.href = "lobby?id=" + gameId;
+    //  return;
+    //}
     // If the username and game ID are not empty, create a POST request to send to the server
     if (username && parseInt(gameId)) {
       if (isNaN(gameId)) {

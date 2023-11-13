@@ -17,13 +17,8 @@ class ConectionManager:
     def disconnect(self, websocket: WebSocket):
         self.active_connections.pop(websocket, None)
 
-    async def send_personal_message(self, message: str, websocket: WebSocket):
-        await websocket.send_text(message)
-        logger.debug(f"Sent message {message} to websocket {websocket.client}")
-
-
-    async def broadcast(self, message: str, game_id: int):
+    async def broadcast(self, message: dict, game_id: int):
         for connection, [conn_game_id, conn_player_id] in self.active_connections.items():
             if conn_game_id == game_id:
-                await connection.send_text(message)
+                await connection.send_json(message)
                 logger.debug(f"Sent message {message} to websocket {connection.client}")
