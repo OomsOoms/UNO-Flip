@@ -44,36 +44,39 @@ async def root():
 async def websocket_endpoint(websocket: WebSocket, game_id: int, player_id: str):
     """
     Endpoint for the websocket connection
+    
+    This function handles the websocket connection for the lobby. It receives the websocket, game_id and player_id as parameters.
+    It connects the websocket to the manager, and sends the game state to the active connections.
+    It also sends the lobby information to the active connections.
+    It handles the received data and disconnects the websocket if necessary.
+    
+    :param websocket: WebSocket object
+    :param game_id: int representing the game id
+    :param player_id: str representing the player id
     """
-    game = games.get(game_id)
-    if game and player_id in game.players:
+    game_object = games.get(game_id)
+    if game_object and player_id in game_object.players:
         await manager.connect(websocket, game_id, player_id)
         logger.debug(f"Connected websocket {websocket.client}")
 
-        if game is None or player_id not in game.players:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request to fetch lobby")
+        await manager.update_lobby(game_object)
+    else:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request to fetch lobby")
         
-        # will update all clients in the lobby
-        for connection, [conn_game_id, conn_player_id] in manager.active_connections.items():
-            if conn_game_id == game_id and game.started:     
-                await connection.send_json({"type": "game_state", "game_state": game.get_game_state(conn_player_id)})
-            else:   
-                is_host = next(iter(game.players)) == conn_player_id
-                player_names = [player.name for player in game.players.values()]
-                await connection.send_json({"type": "lobby", "player_names": player_names, "is_host": is_host})
 
     try:
         while True:
             received_data = await websocket.receive_text()
+            # TODO: Handle received data, this data will be actions in game
             
     except WebSocketDisconnect:
         manager.disconnect(websocket)
         await asyncio.sleep(5)
 
         if not any(conn_game_id == game_id and conn_player_id == player_id for conn_game_id, conn_player_id in manager.active_connections.values()):
-            game.players.pop(player_id, None)
+            game_object.players.pop(player_id, None)
             logger.debug(f"Disconnected websocket {websocket.client} for game {game_id} and player {player_id}")
-            if not game.players:
+            if not game_object.players:
                 games.pop(game_id, None)
                 logger.debug(f"Removed game {game_id} because there are no players left")
             await manager.broadcast("update_lobby", game_id)
