@@ -55,11 +55,13 @@ class Game:
         
         def remove_player(self, player_id: str) -> None:
             """
-            Removes a player from the game.
+            Removes a player from the game and adds their cards back to the deck.
 
             :param player_id: ID of the player to remove.
             :type player_id: str
             """
+            player = self.players[player_id]
+            self.deck.cards += player.hand
             del self.players[player_id]
             logger.info(f"Removed player: {player_id} from game {self.game_id}")
 
@@ -74,7 +76,6 @@ class Game:
 
             If a player is added after the game has started, the `add_player` is method overwritten so it will do nothing.
             """
-            logger.info(f"Game started {self.game_id}")
             while True:
                 # Keep selecting and discarding cards until a number card is selected
                 start_card = self.deck.pick_card(self)
@@ -85,8 +86,8 @@ class Game:
                 logger.debug(f"Selecting new start card {[start_card.light.side, start_card.dark.side][self.deck.flip]}")
 
             self.current_player_index = randint(0, len(self.players)-1)
-            logger.debug(f"Current player index: {self.current_player_index} and player id: {self.current_player_id}")
             self.started = True 
+            logger.info(f"Game started {self.game_id}")
 
         def get_game_state(self, player_id):
             """
@@ -97,33 +98,16 @@ class Game:
             :return: Dictionary containing the discard pile, the player's hand, and the back of the opponent's hands
             :rtype: dict
             """
+            logger.info(f"Game state requested for game {self.game_id} by player {player_id}")
             if self.started:
-                player_object = self.players[player_id]
-                discard_side = [self.deck.discard[-1].light.side, self.deck.discard[-1].dark.side][self.deck.flip]
-
-                # Create a dictionary of the player's hand with the index as the key and the side and whether it is playable as the value
-                player_hand = {}
-                for index, card in enumerate(player_object.hand):
-                    card_side = [card.light.side, card.dark.side][self.deck.flip]
-                    is_playable = any(item in discard_side for item in card_side) and player_id == self.current_player_id
-                    player_hand[index] = {"side": card_side, "is_playable": is_playable}
-
-                # Create a dictionary of the opponent's hands with the name as the key and the back of the cards as the value
-                opponent_hands = {}
-                for opponent_id, opponent in self.players.items():
-                    if opponent_id != player_id:
-                        opponent_hand = []
-                        for card in opponent.hand:
-                            card_side = [card.light.side, card.dark.side][(self.deck.flip + 1) % 2]
-                            opponent_hand.append(card_side)
-                        opponent_hands[opponent.name] = opponent_hand
-
-                return {"type": "gameState", "discard": discard_side, "playerHand": player_hand, "opponentHands": opponent_hands}
+                
+                # TODO: rewrite this as it is causing errors + needs to work differntly for js
+                return {"type": "gameState", "discard": "discard_side", "playerHand": "player_hand", "opponentHands": "opponent_hands"}
             else:
                 is_host = next(iter(self.players)) == player_id
                 player_names = [player.name for player in self.players.values()]
                 return ({"type": "lobby", "playerNames": player_names, "isHost": is_host})
-            
+
         def select_card(self, player_id, card):
  
             # Do another card check to prevent cheating from the client

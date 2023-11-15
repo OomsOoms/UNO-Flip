@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import "../scss/gameLobby.scss";
 import { apiUrl, webSocketUrl } from "../index.js";
 
-function Game( { lobbyData: { discard, playerHand, opponentHands } } ) {
+function Game({ lobbyData: { discard, playerHand, opponentHands } }) {
   return (
     <div id="gameContainer">
       <h1>Game</h1>
@@ -13,7 +13,7 @@ function Game( { lobbyData: { discard, playerHand, opponentHands } } ) {
   );
 }
 
-const Lobby = ( { lobbyData: { playerNames, isHost } } ) => {
+const Lobby = ({ lobbyData: { playerNames, isHost } }) => {
   const urlParams = new URLSearchParams(window.location.search);
 
   const gameId = urlParams.get("id");
@@ -35,7 +35,7 @@ const Lobby = ( { lobbyData: { playerNames, isHost } } ) => {
       .then((response) => response.json())
       .then((data) => console.log("Start game button detail:", data.detail));
   };
-  
+
   return (
     <>
       <div id="lobbyContainer">
@@ -48,12 +48,12 @@ const Lobby = ( { lobbyData: { playerNames, isHost } } ) => {
       </div>
 
       <div id="playerListContainer">
-          {playerNames.map((playerName, index) => (
-            <p key={index}>{playerName}</p>
-          ))}
+        {playerNames.map((playerName, index) => (
+          <p key={index}>{playerName}</p>
+        ))}
 
         {isHost && (
-            <button id="startGameButton" onClick={startGame} disabled={playerNames.length < 2} className={playerNames.length < 2 ? "disabled" : ""}>
+          <button id="startGameButton" onClick={startGame} disabled={playerNames.length < 2} className={playerNames.length < 2 ? "disabled" : ""}>
             Start Game
           </button>
         )}
@@ -75,19 +75,21 @@ function GameRoom() {
     const ws = new WebSocket(`${webSocketUrl}/lobby?game_id=${gameId}&player_id=${playerId}`);
 
     ws.onopen = () => {
-      ws.send(JSON.stringify({ type: "lobby" }));
+      console.log("WebSocket connection opened");
     }
-    
-    // TODO: it is redirecting when refreshing the page but it didnt do that before so fix that
+
     ws.onclose = () => {
       console.log("WebSocket connection disconnected");
+      // attempt to reconnect, show message reconnecting
+    };
+    ws.onerror = () => {
       if (document.referrer.includes(window.location.origin)) {
         window.history.back();
       } else {
         window.location.href = "/";
       }
       return;
-    };
+    }
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
@@ -108,7 +110,7 @@ function GameRoom() {
     case "gameState":
       return <Game lobbyData={lobbyData} />;
     default:
-      return <p>Something went wrong</p>;    
+      return <p>Loading...</p>;
   }
 }
 

@@ -50,4 +50,22 @@ div {
   margin: 10px 0;
   padding: 5px 0;
 }
+.alert {
+  display: none;
+  padding: 20px;
+  background-color: #f44336;
+  &.closed {
+    display: none;
+  }
+}
+.closebtn {
+  margin-left: 15px;
+  float: right;
+  transition: 0.3s;
+  cursor: pointer;
+  &:hover {
+    color: black;
+  }
+}
+
 

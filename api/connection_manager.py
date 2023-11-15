@@ -3,8 +3,8 @@ from typing import Dict
 
 from api.game import Game
 from utils.custom_logger import CustomLogger
-logger = CustomLogger(__name__)
 
+logger = CustomLogger(__name__)
 
 class ConectionManager:
 
@@ -25,7 +25,7 @@ class ConectionManager:
                 logger.debug(f"Sent message {message} to websocket {connection.client}")
 
     async def broadcast_gamestate(self, game_object: Game):
-         for connection, [conn_game_id, conn_player_id] in self.active_connections.items():
+        logger.debug(f"Broadcasting gamestate for game {game_object.game_id}")
+        for connection, [conn_game_id, conn_player_id] in self.active_connections.items():
             if conn_game_id == game_object.game_id:
                 await connection.send_json(game_object.get_game_state(conn_player_id))
-                logger.debug(f"Sending gamestate to websocket {connection.client}")

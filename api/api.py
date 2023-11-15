@@ -92,13 +92,13 @@ async def lobby(websocket: WebSocket, game_id: int, player_id: str):
             conn_game_id == game_id and conn_player_id == player_id 
             for conn_game_id, conn_player_id in manager.active_connections.values()
         ):
-            game_object.players.pop(player_id, None)
+            game_object.remove_player(player_id)
             logger.debug(f"Disconnected websocket {websocket.client} from game {game_id} and player {player_id}")
             if not game_object.players:
                 games.pop(game_id, None)
                 logger.debug(f"Removed game {game_id} from games as there are no players left")
             # Send the updated lobby to everyone
-            await manager.broadcast_gamestate(game_object)
+            #await manager.broadcast_gamestate(game_object)
 
 @app.post("/create_game")
 async def create_game(create_game_request: CreateGameRequest) -> dict:

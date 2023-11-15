@@ -3,18 +3,18 @@ import logging
 level = logging.DEBUG
 
 class LoggingFormatter(logging.Formatter):
-    # Colors and styles
+    # Colours and styles
     black = "\x1b[30m"
     red = "\x1b[31m"
     green = "\x1b[32m"
     yellow = "\x1b[33m"
     blue = "\x1b[34m"
-    gray = "\x1b[38m"
+    orange = "\x1b[38;5;208m"
     reset = "\x1b[0m"
     bold = "\x1b[1m"
 
-    COLORS = {
-        logging.DEBUG: gray + bold,
+    COLOURS = {
+        logging.DEBUG: orange + bold,
         logging.INFO: blue + bold,
         logging.WARNING: yellow + bold,
         logging.ERROR: red,
@@ -22,12 +22,11 @@ class LoggingFormatter(logging.Formatter):
     }
 
     def format(self, record):
-        log_color = self.COLORS[record.levelno]
+        log_colour = self.COLOURS[record.levelno]
         format_str = (
-            f"{log_color}{{levelname:<10}}{self.reset}"
-            f"{self.black}{self.bold}{{asctime}}{self.reset} - "
+            f"{log_colour}{{levelname:<10}}{self.reset}"
             f"{self.green}{{name}}{self.reset} "
-            f"{self.bold}{{message}}{self.reset}"
+            f"{log_colour}{self.bold}{{message}}{self.reset}"
         )
         formatter = logging.Formatter(format_str, "%Y-%m-%d %H:%M:%S", style="{")
         return formatter.format(record)
