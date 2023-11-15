@@ -19,9 +19,13 @@
 }
 #startGameButton {
   position: absolute;
-  top: 50px;
+  top: 12px;
   right: 0;
 }
 #playerList {
   padding: 10px 20px;
+}
+.disabled {
+  opacity: 0.5;
+  pointer-events: none;
 }

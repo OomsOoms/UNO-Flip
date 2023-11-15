@@ -5,8 +5,8 @@ import "./scss/index.scss";
 import Header from "./pages/header.js";
 import Home from "./pages/home.js";
 import JoinGameForm from "./pages/joinGame.js";
-import CreateGame from "./pages/createGame.js";
-import GameLobby from "./pages/gameLobby.js";
+import CreateGameForm from "./pages/createGame.js";
+import GameRoom from "./pages/gameRoom.js";
 
 const apiUrl = "http://127.0.0.1:8000";
 const webSocketUrl = "ws://127.0.0.1:8000";
@@ -19,8 +19,8 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/join-game" element={<JoinGameForm />} />
-        <Route path="/create-game" element={<CreateGame />} />
-        <Route path="/lobby" element={<GameLobby />} />
+        <Route path="/create-game" element={<CreateGameForm />} />
+        <Route path="/lobby" element={<GameRoom />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </BrowserRouter>

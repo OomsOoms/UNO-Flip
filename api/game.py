@@ -97,27 +97,33 @@ class Game:
             :return: Dictionary containing the discard pile, the player's hand, and the back of the opponent's hands
             :rtype: dict
             """
-            discard_side = [self.deck.discard[-1].light.side, self.deck.discard[-1].dark.side][self.deck.flip]
-            logger.debug(discard_side)
-            player_object = self.players[player_id]
+            if self.started:
+                player_object = self.players[player_id]
+                discard_side = [self.deck.discard[-1].light.side, self.deck.discard[-1].dark.side][self.deck.flip]
 
-            player_hand = {}
-            for index, card in enumerate(player_object.hand):
-                card_side = [card.light.side, card.dark.side][self.deck.flip]
-                is_playable = any(item in discard_side for item in card_side) and player_id == self.current_player_id
-                player_hand[index] = {"side": card_side, "is_playable": is_playable}
+                # Create a dictionary of the player's hand with the index as the key and the side and whether it is playable as the value
+                player_hand = {}
+                for index, card in enumerate(player_object.hand):
+                    card_side = [card.light.side, card.dark.side][self.deck.flip]
+                    is_playable = any(item in discard_side for item in card_side) and player_id == self.current_player_id
+                    player_hand[index] = {"side": card_side, "is_playable": is_playable}
 
-            opponent_hands = {}
-            for opponent_id, opponent in self.players.items():
-                if opponent_id != player_id:
-                    opponent_hand = []
-                    for card in opponent.hand:
-                        card_side = [card.light.side, card.dark.side][(self.deck.flip + 1) % 2]
-                        opponent_hand.append(card_side)
-                    opponent_hands[opponent.name] = opponent_hand
+                # Create a dictionary of the opponent's hands with the name as the key and the back of the cards as the value
+                opponent_hands = {}
+                for opponent_id, opponent in self.players.items():
+                    if opponent_id != player_id:
+                        opponent_hand = []
+                        for card in opponent.hand:
+                            card_side = [card.light.side, card.dark.side][(self.deck.flip + 1) % 2]
+                            opponent_hand.append(card_side)
+                        opponent_hands[opponent.name] = opponent_hand
 
-            return {"discard": discard_side, "player_hand": player_hand, "opponent_hands": opponent_hands}
-        
+                return {"type": "gameState", "discard": discard_side, "playerHand": player_hand, "opponentHands": opponent_hands}
+            else:
+                is_host = next(iter(self.players)) == player_id
+                player_names = [player.name for player in self.players.values()]
+                return ({"type": "lobby", "playerNames": player_names, "isHost": is_host})
+            
         def select_card(self, player_id, card):
  
             # Do another card check to prevent cheating from the client

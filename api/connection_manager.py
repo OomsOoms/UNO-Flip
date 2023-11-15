@@ -24,11 +24,8 @@ class ConectionManager:
                 await connection.send_json(message)
                 logger.debug(f"Sent message {message} to websocket {connection.client}")
 
-    async def update_lobby(self, game_object: Game):
-        for connection, [conn_game_id, conn_player_id] in self.active_connections.items():
-            if conn_game_id == game_object.game_id and game_object.started:     
-                await connection.send_json({"type": "game_state", "game_state": game_object.get_game_state(conn_player_id)})
-            else:   
-                is_host = next(iter(game_object.players)) == conn_player_id
-                player_names = [player.name for player in game_object.players.values()]
-                await connection.send_json({"type": "lobby", "player_names": player_names, "is_host": is_host})
+    async def broadcast_gamestate(self, game_object: Game):
+         for connection, [conn_game_id, conn_player_id] in self.active_connections.items():
+            if conn_game_id == game_object.game_id:
+                await connection.send_json(game_object.get_game_state(conn_player_id))
+                logger.debug(f"Sending gamestate to websocket {connection.client}")
