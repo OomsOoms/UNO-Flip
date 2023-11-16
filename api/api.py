@@ -9,7 +9,10 @@ from api.connection_manager import ConectionManager
 from utils.custom_logger import CustomLogger
 import asyncio
 
-# Create a FastAPI instance, run using: uvicorn api.api:app --reload --host 0.0.0.0
+# Run with logging:
+# uvicorn api.api:app --reload --host 0.0.0.0
+# Run without logging:
+# uvicorn api.api:app --reload --host 0.0.0.0 --log-level critical
 app = FastAPI(title="UNO API", description="API for the UNO Flip game", version="0.1.0")
 
 # Add the CORSMiddleware to the FastAPI instance
@@ -56,49 +59,34 @@ async def get_connected_websockets():
 @app.websocket("/lobby")
 async def lobby(websocket: WebSocket, game_id: int, player_id: str):
     """
-    Endpoint for the websocket connection
-    
-    This function handles the websocket connection for the lobby. It receives the websocket, game_id and player_id as parameters.
-    It connects the websocket to the manager, and sends the game state to the active connections.
-    It also sends the lobby information to the active connections.
-    It handles the received data and disconnects the websocket if necessary.
-    
-    :param websocket: WebSocket object
-    :param game_id: int representing the game id
-    :param player_id: str representing the player id
+    Endpoint for the websocket connection to the lobby
     """
     game_object = games.get(game_id)
-    # Check if the game exists and the player is in the game before connecting the websocket otherwise raise an error
-    if game_object and player_id in game_object.players:
+
+    if game_object and (player_id in game_object.players):
         await manager.connect(websocket, game_id, player_id)
         logger.debug(f"Connected websocket {websocket.client}")
-        # Send the game state only to the player that joined
         await websocket.send_json(game_object.get_game_state(player_id))
-
     else:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request to fetch lobby")
     
-    # Constantly receive data from the websocket and handle it until the websocket disconnects
     try:
         while True:
             received_data = await websocket.receive_text()
             # TODO: Handle received data, this data will be actions in game
-            
+
     except WebSocketDisconnect:
         manager.disconnect(websocket)
-        await asyncio.sleep(5)
-        
-        if not any(
-            conn_game_id == game_id and conn_player_id == player_id 
-            for conn_game_id, conn_player_id in manager.active_connections.values()
-        ):
+
+        # If the websocket with the same details has not reconnected, remove the player from the game
+        if (game_id, player_id) not in manager.active_connections.values() and player_id in game_object.players:
             game_object.remove_player(player_id)
             logger.debug(f"Disconnected websocket {websocket.client} from game {game_id} and player {player_id}")
             if not game_object.players:
                 games.pop(game_id, None)
                 logger.debug(f"Removed game {game_id} from games as there are no players left")
-            # Send the updated lobby to everyone
-            #await manager.broadcast_gamestate(game_object)
+            else:
+                await manager.broadcast_gamestate(game_object)AHAHA
 
 @app.post("/create_game")
 async def create_game(create_game_request: CreateGameRequest) -> dict:

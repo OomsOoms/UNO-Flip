@@ -60,7 +60,7 @@ class Game:
             :param player_id: ID of the player to remove.
             :type player_id: str
             """
-            player = self.players[player_id]
+            player = self.players.get(player_id)
             self.deck.cards += player.hand
             del self.players[player_id]
             logger.info(f"Removed player: {player_id} from game {self.game_id}")
