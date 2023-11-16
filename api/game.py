@@ -98,7 +98,7 @@ class Game:
             :return: Dictionary containing the discard pile, the player's hand, and the back of the opponent's hands
             :rtype: dict
             """
-            logger.info(f"Game state requested for game {self.game_id} by player {player_id}")
+            logger.info(f"fetching game state for player {player_id} in game {self.game_id}")
             if self.started:
                 
                 # TODO: rewrite this as it is causing errors + needs to work differntly for js

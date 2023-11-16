@@ -14,9 +14,11 @@ class ConectionManager:
     async def connect(self, websocket: WebSocket, game_id: int, player_id: str):
         await websocket.accept()
         self.active_connections[websocket] = [game_id, player_id]
+        logger.debug(f"Accepted and added websocket {websocket.client} to active connections")
 
     def disconnect(self, websocket: WebSocket):
         self.active_connections.pop(websocket, None)
+        logger.debug(f"Removed websocket {websocket.client} from active connections")
 
     async def broadcast(self, message: dict, game_id: int):
         for connection, [conn_game_id, conn_player_id] in self.active_connections.items():

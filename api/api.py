@@ -65,29 +65,27 @@ async def lobby(websocket: WebSocket, game_id: int, player_id: str):
 
     if game_object and (player_id in game_object.players):
         await manager.connect(websocket, game_id, player_id)
-        logger.debug(f"Connected websocket {websocket.client}")
         await websocket.send_json(game_object.get_game_state(player_id))
     else:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request to fetch lobby")
+        await websocket.close()
+        return
     
     try:
-        while True:
-            received_data = await websocket.receive_text()
-            # TODO: Handle received data, this data will be actions in game
+        await websocket.receive_json()
 
+    # Only runs when an authenticated websocket disconnects
     except WebSocketDisconnect:
         manager.disconnect(websocket)
+        # Provides a 5 second window for the player to reconnect
+        await asyncio.sleep(5)
+        if [game_id, player_id] not in list(manager.active_connections.values()):
+            if game_object.players.get(player_id):
+                game_object.remove_player(player_id)
+                if not len(game_object.players):
+                    del games[game_id]
+                    logger.debug(f"Deleting game {game_id} because thre are no players left")
 
-        # If the websocket with the same details has not reconnected, remove the player from the game
-        if (game_id, player_id) not in manager.active_connections.values() and player_id in game_object.players:
-            game_object.remove_player(player_id)
-            logger.debug(f"Disconnected websocket {websocket.client} from game {game_id} and player {player_id}")
-            if not game_object.players:
-                games.pop(game_id, None)
-                logger.debug(f"Removed game {game_id} from games as there are no players left")
-            else:
-                await manager.broadcast_gamestate(game_object)AHAHA
-
+    
 @app.post("/create_game")
 async def create_game(create_game_request: CreateGameRequest) -> dict:
     """
