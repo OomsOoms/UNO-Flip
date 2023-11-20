@@ -84,7 +84,8 @@ async def lobby(websocket: WebSocket, game_id: int, player_id: str):
                 if not len(game_object.players):
                     del games[game_id]
                     logger.debug(f"Deleting game {game_id} because thre are no players left")
-
+                else:
+                    await manager.broadcast_gamestate(game_object)
     
 @app.post("/create_game")
 async def create_game(create_game_request: CreateGameRequest) -> dict:
@@ -101,7 +102,6 @@ async def create_game(create_game_request: CreateGameRequest) -> dict:
     game_object = Game()
     games[game_object.game_id] = game_object
     player_id = game_object.add_player(player_name)
-    await manager.broadcast_gamestate(game_object)
     return JSONResponse(content={"game_id": game_object.game_id, "player_id": player_id}, status_code=status.HTTP_201_CREATED)
 
 @app.post("/join_game")

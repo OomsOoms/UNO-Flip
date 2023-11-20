@@ -2,13 +2,15 @@ import React, { useState, useEffect } from "react";
 import "../scss/gameLobby.scss";
 import { apiUrl, webSocketUrl } from "../index.js";
 
-function Game({ lobbyData: { discard, playerHand, opponentHands } }) {
+function Game({ lobbyData: { discard, playerHand, opponentHands, playerName, currentPlayerName } }) {
   return (
     <div id="gameContainer">
       <h1>Game</h1>
-      <p>Discard: {discard}</p>
-      <p>Player Hand: {JSON.stringify(playerHand)}</p>
+      <p>Player Name: {playerName}</p>
+      <p>Current Player: {currentPlayerName}</p>
+      <p>Discard: {JSON.stringify(discard)}</p>
       <p>Opponent Hands: {JSON.stringify(opponentHands)}</p>
+      <p>Player Hand: {JSON.stringify(playerHand)}</p>
     </div>
   );
 }
@@ -80,7 +82,8 @@ function GameRoom() {
 
     ws.onclose = () => {
       console.log("WebSocket connection disconnected");
-      // attempt to reconnect, show message reconnecting
+      // Redirects back to this page which will attempt to reconnect, and if there is an error it will redirect to the home page
+      window.location.href = "lobby?id=" + gameId;
     };
     ws.onerror = () => {
       if (document.referrer.includes(window.location.origin)) {
@@ -107,7 +110,7 @@ function GameRoom() {
   switch (lobbyData.type) {
     case "lobby":
       return <Lobby lobbyData={lobbyData} />;
-    case "gameState":
+    case "game":
       return <Game lobbyData={lobbyData} />;
     default:
       return <p>Loading...</p>;

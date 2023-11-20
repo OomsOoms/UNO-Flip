@@ -63,6 +63,8 @@ class Game:
             player = self.players.get(player_id)
             self.deck.cards += player.hand
             del self.players[player_id]
+            if len(self.players) and self.current_player_id == player_id:
+                self.current_player_index = (self.current_player_index + self.game_direction*2) % len(self.players)
             logger.info(f"Removed player: {player_id} from game {self.game_id}")
 
         def start_game(self):
@@ -98,11 +100,53 @@ class Game:
             :return: Dictionary containing the discard pile, the player's hand, and the back of the opponent's hands
             :rtype: dict
             """
-            logger.info(f"fetching game state for player {player_id} in game {self.game_id}")
-            if self.started:
-                
-                # TODO: rewrite this as it is causing errors + needs to work differntly for js
-                return {"type": "gameState", "discard": "discard_side", "playerHand": "player_hand", "opponentHands": "opponent_hands"}
+            logger.info(f"fetching game state for player {player_id} in game {self.game_id} {len(self.players)} players")
+
+            if self.started:   
+
+                discard_side = [self.deck.discard[-1].light.side, self.deck.discard[-1].dark.side][self.deck.flip]
+                player_object = self.players.get(player_id)
+
+                player_hand = []
+                for card in player_object.hand:
+                    card_side = [card.light.side, card.dark.side][self.deck.flip]
+                    is_playable = (card_side["colour"] == discard_side["colour"] or card_side["action"] == discard_side["action"]) and player_id == self.current_player_id
+                    player_hand.append(
+                         {
+                            "colour": card_side["colour"],
+                            "action": card_side["action"],
+                            "isPlayable": is_playable
+                        }
+                    )
+
+                opponent_hands = []
+                for opponent_id, opponent in self.players.items():
+                    if opponent_id != player_id:
+                        cards = []
+                        for card in opponent.hand:
+                            card_side = [card.light.side, card.dark.side][(self.deck.flip + 1) % 2]
+                            cards.append(
+                                {
+                                    "colour": card_side["colour"],
+                                    "action": card_side["action"]
+                                }
+                            )
+                        opponent_hands.append(
+                            {
+                                "playerName": opponent.name,
+                                "cards": cards
+                            }
+                        )
+
+                return {
+                    "type": "game",
+                    "discard": discard_side,
+                    "playerHand": player_hand,
+                    "opponentHands": opponent_hands,
+                    "playerName": player_object.name,
+                    "currentPlayerName": self.players[self.current_player_id].name
+                }
+
             else:
                 is_host = next(iter(self.players)) == player_id
                 player_names = [player.name for player in self.players.values()]
