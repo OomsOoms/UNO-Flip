@@ -61,6 +61,7 @@ class Game:
             :type player_id: str
             """
             player = self.players.get(player_id)
+            # TODO: wild cards colour should be reset to None
             self.deck.cards += player.hand
             del self.players[player_id]
             if len(self.players) and self.current_player_id == player_id:

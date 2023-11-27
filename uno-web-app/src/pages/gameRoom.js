@@ -2,15 +2,44 @@ import React, { useState, useEffect } from "react";
 import "../scss/gameLobby.scss";
 import { apiUrl, webSocketUrl } from "../index.js";
 
+function Card({ card: { colour, action }, currentPlayerName, playerName }) {
+  const selectCard = () => {
+    console.log(`Clicked ${colour} ${action} card`);
+  }
+
+  const isDisabled = currentPlayerName !== playerName;
+
+  return (
+    <button
+      style={{ backgroundColor: colour }}
+      className={`card playable ${isDisabled ? "disabled" : ""}`}
+      onClick={isDisabled ? null : selectCard}
+      disabled={isDisabled}
+    >
+      {action}
+    </button>
+  );
+}
+
 function Game({ lobbyData: { discard, playerHand, opponentHands, playerName, currentPlayerName } }) {
   return (
     <div id="gameContainer">
-      <h1>Game</h1>
-      <p>Player Name: {playerName}</p>
-      <p>Current Player: {currentPlayerName}</p>
-      <p>Discard: {JSON.stringify(discard)}</p>
-      <p>Opponent Hands: {JSON.stringify(opponentHands)}</p>
-      <p>Player Hand: {JSON.stringify(playerHand)}</p>
+      <div id="opponentContainer">
+        <p>{JSON.stringify(opponentHands)}</p>
+      </div>
+
+      <div id="discardContainer">
+        <div
+          style={{ backgroundColor: discard.colour }}
+          className="card"
+        >
+          {discard.action}
+        </div>
+      </div>
+      
+      {playerHand.map((card, index) => (
+        <Card key={index} card={card} currentPlayerName={currentPlayerName} playerName={playerName} />
+      ))}
     </div>
   );
 }
@@ -82,8 +111,6 @@ function GameRoom() {
 
     ws.onclose = () => {
       console.log("WebSocket connection disconnected");
-      // Redirects back to this page which will attempt to reconnect, and if there is an error it will redirect to the home page
-      window.location.href = "lobby?id=" + gameId;
     };
     ws.onerror = () => {
       if (document.referrer.includes(window.location.origin)) {

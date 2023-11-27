@@ -45,6 +45,10 @@ button {
   &:active {
     background-color: rgba(70, 70, 70, 0.5);
   }
+  &.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
 }
 div {
   margin: 10px 0;

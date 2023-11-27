@@ -25,7 +25,16 @@
 #playerList {
   padding: 10px 20px;
 }
-.disabled {
-  opacity: 0.5;
-  pointer-events: none;
+
+.card {
+  width: 100px;
+  height: 150px;
+  margin: 0 5px;
+  &.playable {
+    cursor: pointer;
+    &:hover {
+      transform: translateY(-10px);
+      transition: transform 0.3s;
+    }
+  }
 }

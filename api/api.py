@@ -72,6 +72,7 @@ async def lobby(websocket: WebSocket, game_id: int, player_id: str):
     
     try:
         await websocket.receive_json()
+        logger.debug(f"Received message from {game_id} {player_id}")
 
     # Only runs when an authenticated websocket disconnects
     except WebSocketDisconnect:
