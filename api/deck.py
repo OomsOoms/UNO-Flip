@@ -158,7 +158,7 @@ class Deck:
 
     # Create a list of cards
     cards = [
-        Card(Number({"colour": "1", "colour": "Yellow"}), SkipEveryone({"action": "SkipEveryone", "colour": "Pink"})),
+        Card(Number({"action": "1", "colour": "Yellow"}), SkipEveryone({"action": "SkipEveryone", "colour": "Pink"})),
         Card(Number({"action": "1", "colour": "Yellow"}), Wild({"action": "Wild", "colour": None})),
         Card(Number({"action": "2", "colour": "Yellow"}), Number({"action": "1", "colour": "Turquoise"})),
         Card(Number({"action": "2", "colour": "Yellow"}), Number({"action": "8", "colour": "Turquoise"})),
