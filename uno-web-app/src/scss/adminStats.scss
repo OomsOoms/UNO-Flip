@@ -1,0 +1,11 @@
+@import "./index.scss";
+
+.connectedWebsockets {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 90%;
+    border: 2px solid $light-grey;
+    border-radius: 10px;
+    padding: 10px 20px;    
+}

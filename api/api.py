@@ -43,18 +43,32 @@ async def root():
     """
     return "Online"
 
-@app.get("/connected_websockets")
-async def get_connected_websockets():
+@app.get("/admin_stats")
+async def admin_stats():
     """
-    Endpoint for getting the connected websockets
+    Admin page
+    """
+    game_stats = {}
+    for game_id, game_object in games.items():
+        game_stats[game_id] = {
+            "players": list(game_object.players),
+            "currentPlayerIndex": game_object.current_player_index,
+            "currentPlayerId": game_object.current_player_id,
+            "deckLength": len(game_object.deck.cards),
+            "playersHand": {player_id: game_object.players[player_id].hand for player_id in game_object.players},
+            "gameDirection": game_object.game_direction,
+            "gameFlip": game_object.deck.flip,
+            "gameStarted": game_object.started
+        }
 
-    Returns:
-        dict: A dictionary containing the connected websockets
-    """
-    connections_dict = {}
-    for conn, game_player in manager.active_connections.items():
-        connections_dict[str(conn)] = game_player
-    return connections_dict
+    websocket_stats = {}
+    for connection_id, (game_id, player_id) in manager.active_connections.items():
+        websocket_stats[f"{str(connection_id.client[0])}:{str(connection_id.client[1])}"] = {"gameId": game_id, "playerId": player_id}
+    return {
+        "gameStats": game_stats,
+        "websocketStats": websocket_stats
+    }
+    
 
 @app.websocket("/lobby")
 async def lobby(websocket: WebSocket, game_id: int, player_id: str):

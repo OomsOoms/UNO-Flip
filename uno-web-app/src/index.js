@@ -7,6 +7,7 @@ import Home from "./pages/home.js";
 import JoinGameForm from "./pages/joinGame.js";
 import CreateGameForm from "./pages/createGame.js";
 import GameRoom from "./pages/gameRoom.js";
+import AdminStats from "./pages/adminStats.js";
 
 const apiUrl = "http://127.0.0.1:8000";
 const webSocketUrl = "ws://127.0.0.1:8000";
@@ -17,11 +18,14 @@ function App() {
     <BrowserRouter>
       <Header />
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/join-game" element={<JoinGameForm />} />
-        <Route path="/create-game" element={<CreateGameForm />} />
-        <Route path="/lobby" element={<GameRoom />} />
-        <Route path="*" element={<Navigate to="/" />} />
+        <Route path="/" >
+          <Route path="/" element={<Home />} />
+          <Route path="join-game" element={<JoinGameForm />} />
+          <Route path="create-game" element={<CreateGameForm />} />
+          <Route path="lobby" element={<GameRoom />} />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Route>
+        <Route path="/admin" element={<AdminStats />} />
       </Routes>
     </BrowserRouter>
   );
