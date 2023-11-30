@@ -74,7 +74,7 @@ function GameStatsItem({ game }) {
         </tr>
         <tr>
           <td>Discard Top</td>
-          <td>{JSON.stringify(game.discardTop)}</td>
+          <td>discardTop</td>
           <td>Game Direction</td>
           <td>{game.gameDirection}</td>
         </tr>

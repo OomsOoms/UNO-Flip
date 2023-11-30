@@ -23,6 +23,7 @@ class Game:
         self.players = {}
         self.deck = Deck(self)  # Create a copy of the deck object
         logger.debug(len(self.deck.cards))
+        # 1 for clockwise, -1 for anti-clockwise
         self.game_direction = 1
         self.prerequisite_func = lambda self: logger.debug("Running default prerequisite_func")
         self.current_player_index = 0
@@ -61,13 +62,23 @@ class Game:
         :param player_id: ID of the player to remove.
         :type player_id: str
         """
-        player = self.players.get(player_id)
-        # TODO: wild cards colour should be reset to None
-        if self.current_player_id == player_id:
-            self.end_turn()
+        player_object = self.players.get(player_id)
+                
+        # If the player being removed comes before the current player
+        if self.game_direction:
+            if list(self.players.keys()).index(player_id) < self.current_player_index:
+                # Decrement the current player index to account for the player being removed
+                self.current_player_index -= 1
+            # Removing a player does the same as incrementing player_index by 1
+            if self.current_player_index >= len(self.players)-1:
+                # If the player_index is out of bounds, reset it to 0
+                self.current_player_index = 0
 
-        self.deck.cards += player.hand
+        # TODO: do the same logic when it is a negative game direction
+        # TODO: wild cards colour should be reset to None
+        self.deck.cards += player_object.hand
         del self.players[player_id]
+
         logger.info(f"Removed player: {player_id} from game {self.game_id}")
 
     def start_game(self):
