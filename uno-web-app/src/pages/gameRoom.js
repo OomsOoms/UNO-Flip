@@ -8,6 +8,8 @@ export default function GameRoom() {
   const gameId = urlParams.get("id");
   const playerId = sessionStorage.getItem(gameId);
 
+  document.title = "UNO | Lobby " + gameId;
+
   // When the value changes the component will re-render
   const [lobbyData, setLobbyData] = useState({});
 
@@ -22,6 +24,7 @@ export default function GameRoom() {
     };
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
+      data.ws = ws;
       setLobbyData(data);
       console.log("Received data from websocket: ", data);
     };
@@ -51,7 +54,6 @@ export default function GameRoom() {
 }
 
 const Lobby = ({ lobbyData: { playerNames, isHost, gameId, playerId } }) => {
-  document.title = "UNO | Lobby " + gameId;
 
   const startGame = () => {
     const requestbody = {
@@ -94,24 +96,8 @@ const Lobby = ({ lobbyData: { playerNames, isHost, gameId, playerId } }) => {
   );
 }
 
-function Card({ index, card: { colour, action, isPlayable } }) {
-  
-  const selectCard = () => {
-    console.log(index)
-  }
+function Game({ lobbyData: { discard, playerHand, opponentHands, ws } }) {
 
-  return (
-    <button
-      style={{ backgroundColor: colour }}
-      className={`card playable ${isPlayable ? "" : "disabled"}`}
-      onClick={selectCard}
-    >
-      {action}
-    </button>
-  );
-}
-
-function Game({ lobbyData: { discard, playerHand, opponentHands } }) {
   return (
     <div id="gameContainer">
       <div id="opponentContainer">
@@ -132,8 +118,29 @@ function Game({ lobbyData: { discard, playerHand, opponentHands } }) {
           key={`${card.colour}-${card.action}-${index}`} 
           index={index}
           card={card}
+          ws={ws}
         />
       ))}
     </div>
+  );
+}
+
+function Card({ index, card: { colour, action, isPlayable }, ws }) {
+  
+  const selectCard = () => {
+    ws.send(JSON.stringify({
+      type: "play_card",
+      index: index,
+    }));
+  }
+
+  return (
+    <button
+      style={{ backgroundColor: colour }}
+      className={`card playable ${isPlayable ? "" : "disabled"}`}
+      onClick={selectCard}
+    >
+      {action}
+    </button>
   );
 }

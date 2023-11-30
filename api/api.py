@@ -89,25 +89,27 @@ async def lobby(websocket: WebSocket, game_id: int, player_id: str):
         await websocket.close()
         return
     
-    try:
-        message = await websocket.receive_json()
-        logger.debug(f"Received message: {message}")
-        #game_object.play_card(player_id, int(message["card_index"]))
-        #await manager.broadcast_gamestate(game_object)
-
-    # Only runs when an authenticated websocket disconnects
-    except WebSocketDisconnect:
-        manager.disconnect(websocket)
-        # Provides a 5 second window for the player to reconnect
-        await asyncio.sleep(5)
-        if [game_id, player_id] not in list(manager.active_connections.values()):
-            if game_object.players.get(player_id):
-                game_object.remove_player(player_id)
-                if not len(game_object.players):
-                    del games[game_id]
-                    logger.debug(f"Deleting game {game_id} because thre are no players left")
-                else:
+    while True:
+        try:
+            message = await websocket.receive_json()
+            logger.debug(f"Received message {message} from {game_id}:{player_id}")
+            if message["type"] == "play_card":
+                if game_object.play_card(player_id, int(message["index"])):
                     await manager.broadcast_gamestate(game_object)
+
+        # Only runs when an authenticated websocket disconnects
+        except WebSocketDisconnect:
+            manager.disconnect(websocket)
+            # Provides a 5 second window for the player to reconnect
+            await asyncio.sleep(5)
+            if [game_id, player_id] not in list(manager.active_connections.values()):
+                if game_object.players.get(player_id):
+                    game_object.remove_player(player_id)
+                    if not len(game_object.players):
+                        del games[game_id]
+                        logger.debug(f"Deleting game {game_id} because thre are no players left")
+                    else:
+                        await manager.broadcast_gamestate(game_object)
     
 @app.post("/create_game")
 async def create_game(create_game_request: CreateGameRequest) -> dict:

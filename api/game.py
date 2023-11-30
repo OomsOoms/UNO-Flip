@@ -170,17 +170,25 @@ class Game:
     def play_card(self, player_id, card_index):
 
         # Checks if the card is playable to prevent cheating from the client
-        discard_side = [self.deck.discard[-1].light.side, self.deck.discard[-1].dark.side][self.deck.flip]
         player_object = self.players.get(player_id)
         card = player_object.hand[card_index]
-        card_side = [card.light, card.dark][self.deck.flip]
 
-        self.players[player_id].hand.remove(card)
-        self.deck.discard.append(card)  # Append the card that was removed onto the discard
+        if player_id == self.current_player_id:
 
-        #self.prerequisite_func = card_behaviour
-        logger.debug(f"Player {player_id} selected card {card_side} removed adding prequisite_func to queue")
-        self.end_turn()
+            # TODO: check if the request comes from the correct player and if the card is a valid playable card
+
+            # Remove the card from the player hand and add it to the discard pile
+            self.players[player_id].hand.remove(card)
+            self.deck.discard.append(card)
+
+            #self.prerequisite_func = card_behaviour
+            card_side = [card.light, card.dark][self.deck.flip]
+            logger.debug(f"Player {player_id} selected card {card_side} removed adding prequisite_func to queue")
+            
+            self.end_turn()
+
+        # When true is returned it tells the API to broadcast the gamestate as the card play was valid
+        return True
                 
     def end_turn(self):
 
