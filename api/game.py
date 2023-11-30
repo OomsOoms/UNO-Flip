@@ -21,7 +21,8 @@ class Game:
         self.game_id = randint(100000, 999999)
         # Dictionary to store player objects with their IDs as keys
         self.players = {}
-        self.deck = Deck(self)
+        self.deck = Deck(self)  # Create a copy of the deck object
+        logger.debug(len(self.deck.cards))
         self.game_direction = 1
         self.prerequisite_func = lambda self: logger.debug("Running default prerequisite_func")
         self.current_player_index = 0

@@ -48,18 +48,23 @@ async def admin_stats():
     """
     Admin page
     """
-    game_stats = {}
+    game_stats = []
     for game_id, game_object in games.items():
-        game_stats[game_id] = {
-            "players": list(game_object.players),
+        players = {player_id: player_object.name for player_id, player_object in game_object.players.items()}
+        game_stat = {
+            "gameId": game_id,
+            "players": players,
+            "host": list(players.keys())[0],
             "currentPlayerIndex": game_object.current_player_index,
             "currentPlayerId": game_object.current_player_id,
             "deckLength": len(game_object.deck.cards),
-            "playersHand": {player_id: game_object.players[player_id].hand for player_id in game_object.players},
+            "discardLength": len(game_object.deck.discard),
+            "discardTop": game_object.deck.discard[-1] if len(game_object.deck.discard) else None,
             "gameDirection": game_object.game_direction,
             "gameFlip": game_object.deck.flip,
-            "gameStarted": game_object.started
+            "gameStarted": str(game_object.started)
         }
+        game_stats.append(game_stat)
 
     websocket_stats = {}
     for connection_id, (game_id, player_id) in manager.active_connections.items():
