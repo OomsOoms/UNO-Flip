@@ -94,7 +94,7 @@ class Game:
         """
         while True:
             # Keep selecting and discarding cards until a number card is selected
-            start_card = self.deck.pick_card(self)
+            start_card = self.deck.pick_card()
             self.deck.discard.append(start_card)
             if start_card.light.type == "Number":
                 logger.debug(f"Selected start card {[start_card.light.side, start_card.dark.side][self.deck.flip]}")
@@ -158,6 +158,7 @@ class Game:
                 "playerHand": player_hand,
                 "opponentHands": opponent_hands,
                 "playerName": player_object.name,
+                "isTurn": player_id == self.current_player_id,
                 "currentPlayerName": self.players[self.current_player_id].name,
                 "gameId": self.game_id,
             }
@@ -172,29 +173,41 @@ class Game:
         # Checks if the card is playable to prevent cheating from the client
         player_object = self.players.get(player_id)
         card = player_object.hand[card_index]
+        card_side = [card.light.side, card.dark.side][self.deck.flip]
+        discard_side = [self.deck.discard[-1].light.side, self.deck.discard[-1].dark.side][self.deck.flip]
+        is_playable = (card_side["colour"] == discard_side["colour"] or card_side["action"] == discard_side["action"]) and player_id == self.current_player_id
 
-        if player_id == self.current_player_id:
-
-            # TODO: check if the request comes from the correct player and if the card is a valid playable card
-
+        if player_id == self.current_player_id and is_playable:
             # Remove the card from the player hand and add it to the discard pile
             self.players[player_id].hand.remove(card)
             self.deck.discard.append(card)
 
-            #self.prerequisite_func = card_behaviour
+            self.prerequisite_func = [card.light, card.dark][self.deck.flip].behaviour
             card_side = [card.light, card.dark][self.deck.flip]
             logger.debug(f"Player {player_id} selected card {card_side} removed adding prequisite_func to queue")
             
             self.end_turn()
 
-        # When true is returned it tells the API to broadcast the gamestate as the card play was valid
-        return True
-                
+            # When true is returned it tells the API to broadcast the gamestate as the card play was valid
+            return True
+
+    def pick_card(self, player_id):
+
+        if player_id == self.current_player_id:
+            # Pick a card from the deck and add it to the player's hand
+            self.players[player_id].hand.append(self.deck.pick_card())
+
+            self.end_turn()
+
+            # When true is returned it tells the API to broadcast the gamestate as the card play was valid
+            return True
+
     def end_turn(self):
 
         # Update the current player index based on the direction of the game, kept in bounds with Modulo operator
         self.current_player_index  = (self.current_player_index  + self.game_direction) % len(self.players)
 
+        self.prerequisite_func(self)
         self.prerequisite_func = lambda self=self: logger.debug("Running default prerequisite_func")
 
         logger.debug(f"Incrementing current player index to {self.current_player_index} and player id to {self.current_player_id} and running prerequisite_func")

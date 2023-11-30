@@ -37,9 +37,27 @@ class Flip(Side):
 
     def behaviour(self, game):
         # Reverse the order of the discard pile and change the flip value
-        game.flip = (game.flip + 1) % 2
+        game.deck.flip = (game.deck.flip + 1) % 2
         game.deck.discard = game.deck.discard[::-1]
-        logger.debug(f"Flipped the discard pile, flip value: {game.flip}")
+        logger.debug(f"Flipped the discard pile, flip value: {game.deck.flip}")
+
+class Skip(Side):
+    def __init__(self, side):
+        super().__init__(side, self.__class__.__name__)
+
+    def behaviour(self, game):
+        # Skips the next player by incrementing or decrementing the current_player_index by 1 depending on the direction
+        game.current_player_index  = (game.current_player_index  + game.game_direction * -1) % len(game.players)
+        logger.debug(f"Skipped the next player, current player index: {game.current_player_index}")
+
+class SkipEveryone(Side):
+    def __init__(self, side):
+        super().__init__(side, self.__class__.__name__)
+
+    def behaviour(self, game):
+        # deinrement the current_player_index by 1 depending on the direction so when incremented it stays the same
+        game.current_player_index  = (game.current_player_index  + game.game_direction) % len(game.players)
+        logger.debug(f"Skipped everyone, current player index: {game.current_player_index}")
 
 class Reverse(Side):
     def __init__(self, side):
@@ -50,6 +68,29 @@ class Reverse(Side):
         game.game_direction *= -1
         logger.debug(f"Reversed the game direction, game direction: {game.game_direction}")
 
+class DrawOne(Side):
+    def __init__(self, side):
+        super().__init__(side, self.__class__.__name__)
+
+    def behaviour(self, game):
+        current_player_hand = game.players[game.current_player_id].hand
+        current_player_hand.append(game.deck.pick_card())
+        # Skip the players turn
+        game.current_player_index  = (game.current_player_index  + game.game_direction) % len(game.players)
+        logger.debug(f"Drew 1 card, current player hand: {current_player_hand}")
+
+class DrawFive(Side):
+    def __init__(self, side):
+        super().__init__(side, self.__class__.__name__)
+
+    def behaviour(self, game):
+        current_player_hand = game.players[game.current_player_id].hand
+        for _ in range(5):
+            current_player_hand.append(game.deck.pick_card())
+        # Skip the players turn
+        game.current_player_index  = (game.current_player_index  + game.game_direction) % len(game.players)
+        logger.debug(f"Drew 5 cardx, current player hand: {current_player_hand}")
+
 class Wild(Side):
     def __init__(self, side):
         super().__init__(side, self.__class__.__name__)
@@ -59,35 +100,6 @@ class Wild(Side):
         self.side = [colour]
         logger.debug(f"Changed the colour to {colour}")
 
-class Skip(Side):
-    def __init__(self, side):
-        super().__init__(side, self.__class__.__name__)
-
-    def behaviour(self, game):
-        # Skips the next player by incrementing or decrementing the current_player_index by 2 depending on the direction
-        game.current_player_index = (game.current_player_index + game.game_direction*2) % len(game.players_list)
-        logger.debug(f"Skipped the next player, current player index: {game.current_player_index}")
-
-class SkipEveryone(Side):
-    def __init__(self, side):
-        super().__init__(side, self.__class__.__name__)
-
-    def behaviour(self, game):
-        # Player index will stay the same when incremented in the end_turn function
-        game.current_player_index = (game.current_player_index + (2 * game.game_direction)) % len(game.players_list)
-        logger.debug(f"Skipped everyone, current player index: {game.current_player_index}")
-
-# TODO: Implement this behaviour
-class DrawOne(Side):
-    def __init__(self, side):
-        super().__init__(side, self.__class__.__name__)
-
-    def behaviour(self, game):
-        current_player_hand = game.players[game.current_player_id].hand
-        current_player_hand.append(game.deck.pick_card(game))
-        game.end_turn()
-        logger.debug(f"Drew 1 card, current player hand: {current_player_hand}")
-        
 class WildDrawTwo(Side):
     def __init__(self, side):
         super().__init__(side, self.__class__.__name__)
@@ -97,17 +109,7 @@ class WildDrawTwo(Side):
         self.side = [colour]
 
         pass # TODO: Implement this behaviour
-
-class DrawFive(Side):
-    def __init__(self, side):
-        super().__init__(side, self.__class__.__name__)
-
-    def behaviour(self, game):
-        current_player_hand = game.players[game.current_player_id].hand
-        current_player_hand.extend(game.deck.pick_card(game) for _ in range(5))
-        game.end_turn()
-        logger.debug(f"Drew 5 cards, current player hand: {current_player_hand}")
-        
+            
 class WildDrawColour(Side):
     def __init__(self, side):
         super().__init__(side, self.__class__.__name__)
@@ -120,14 +122,40 @@ class WildDrawColour(Side):
 
 # Create a Deck class
 class Deck:
-    # 0, light side, 1, dark side
-    flip = 0
-    # discarded careds are added to the discard pile
-    discard = []
+    # Create a method to deal a hand of cards to a player
+    def deal_hand(self):
+        hand = []
+        for x in range(7):
+            # pick a random card from the list of cards
+            card = random.choice(self.cards)
+            self.cards.remove(card)  # remove the card from the list of cards
+            hand.append(card)  # add the card to the player's hand
+
+        return hand
+    
+    def place_card(self, card):
+        sides = (card.light, card.dark)
+        self.discard.append(card)
+        side = sides[self.flip]
+        side.behaviour(self.game)
+
+    # Create a method to pick a random card from the deck
+    def pick_card(self):
+        if len(self.cards) == 0:
+            self.cards, self.discard = self.discard[1:], self.cards
+            self.cards.extend(self.discard)
+            self.discard = [self.cards.pop()]
+
+        card = random.choice(self.cards)
+        self.cards.remove(card)  # Remove the card from the list of cards
+        return card
 
     def __init__(self, game):
+        # 0, light side, 1, dark side
+        self.flip = 0
         self.game = game
         # Create a list of cards
+        self.discard = []
         self.cards = [
             Card(Number({"action": "1", "colour": "Yellow"}), SkipEveryone({"action": "SkipEveryone", "colour": "Pink"})),
             Card(Number({"action": "1", "colour": "Yellow"}), Wild({"action": "Wild", "colour": None})),
@@ -251,32 +279,3 @@ class Deck:
             Card(WildDrawTwo({"action": "WildDrawTwo", "colour": None}), Number({"action": "7", "colour": "Orange"})),
             Card(WildDrawTwo({"action": "WildDrawTwo", "colour": None}), Number({"action": "9", "colour": "Purple"}))
         ]
-
-    # Create a method to deal a hand of cards to a player
-    def deal_hand(self):
-        hand = []
-        for x in range(7):
-            # pick a random card from the list of cards
-            card = random.choice(self.cards)
-            self.cards.remove(card)  # remove the card from the list of cards
-            hand.append(card)  # add the card to the player's hand
-
-        return hand
-    
-    def place_card(self, card):
-        sides = (card.light, card.dark)
-        self.discard.append(card)
-        side = sides[self.flip]
-        side.behaviour(self.game)
-
-    # Create a method to pick a random card from the deck
-    def pick_card(self, game):
-        if len(self.cards) == 0:
-            self.cards, self.discard = self.discard[1:], self.cards
-            self.cards.extend(self.discard)
-            self.discard = [self.cards.pop()]
-
-        card = random.choice(self.cards)
-        self.cards.remove(card)  # Remove the card from the list of cards
-        return card
-

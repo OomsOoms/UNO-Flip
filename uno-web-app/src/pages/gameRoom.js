@@ -96,13 +96,16 @@ const Lobby = ({ lobbyData: { playerNames, isHost, gameId, playerId } }) => {
   );
 }
 
-function Game({ lobbyData: { discard, playerHand, opponentHands, ws } }) {
+function Game({ lobbyData: { discard, playerHand, isTurn, ws } }) {
+
+  const PickCard = () => {
+    ws.send(JSON.stringify({
+      type: "pick_card",
+    }));
+  };
 
   return (
     <div id="gameContainer">
-      <div id="opponentContainer">
-        <p>{JSON.stringify(opponentHands)}</p>
-      </div>
 
       <div id="discardContainer">
         <div
@@ -111,6 +114,13 @@ function Game({ lobbyData: { discard, playerHand, opponentHands, ws } }) {
         >
           {discard.action}
         </div>
+        <button
+          id="pickCardButton"
+          onClick={PickCard}
+          className={`${isTurn ? "" : "disabled"}`}
+        >
+          Pick up card
+        </button>
       </div>
       
       {playerHand.map((card, index) => (
