@@ -1,4 +1,14 @@
-import uuid
+"""
+This module defines the classes for a game and player in the UNO Flip API.
+
+The module game.py defines the classes for a game and player in the UNO Flip API. It contains the following classes:
+
+Player: Represents a player in the game. Each player has a name and a hand of cards.
+Game: Represents a game of UNO Flip. It manages the players, deck, game direction, and game state.
+The module also includes a start_game method in the Game class, which starts the game by selecting the starting card and determining the initial player.
+"""
+
+from uuid import uuid4
 from random import randint
 
 from api.deck import *
@@ -6,84 +16,102 @@ from utils.custom_logger import CustomLogger
 
 logger = CustomLogger(__name__)
 
-# Create a Player class that has a hand of cards and a game object
+
 class Player:
+    """Represents a player in the game.
+
+    Attributes:
+        name (str): The name of the player.
+        game (Game): The game that the player is in.
+        hand (list): The hand of cards that the player has.
+    """
 
     def __init__(self, game, name):
-        # Assign the player a hand of cards from the deck
         self.name = name
         self.game = game
         self.hand = game.deck.deal_hand()
 
+
 class Game:
+    """Represents a game of UNO Flip.
+
+    The Game class manages the players, deck, game direction, and game state.
+
+    Attributes:
+        players (dict): A dictionary of players in the game, with their IDs as keys.
+        player_index (int): The index of the current player in the list of players.
+        deck (Deck): The deck of cards in the game.
+        game_direction (int): The direction of the game, 1 for clockwise, -1 for anti-clockwise.
+        started (bool): Whether the game has started or not.
+        game_id (int): The ID of the game.
+        prerequisite_func (func): The function that is run at the start of the next turn, this is set to the behaviour of the card that was played.   
+    """
 
     def __init__(self) -> None:
+        """Initialises a game of UNO Flip."""
         self.game_id = randint(100000, 999999)
-        # Dictionary to store player objects with their IDs as keys
-        self.players = {}
-        self.deck = Deck(self)  # Create a copy of the deck object
-        logger.debug(len(self.deck.cards))
-        # 1 for clockwise, -1 for anti-clockwise
-        self.game_direction = 1
-        self.prerequisite_func = lambda self: logger.debug("Running default prerequisite_func")
-        self.current_player_index = 0
-        self.started = False
+        logger.info(f"Creating game {self.game_id}")
 
-        logger.info(f"Game created {self.game_id}")
+        self.players = {}
+        self.player_index = 0
+        self.deck = Deck(self)
+        self.game_direction = 1  # 1 for clockwise, -1 for anti-clockwise
+        self.started = False
+        self.prerequisite_func = lambda self: logger.debug(
+            f"Running default prerequisite_func for game {self.game_id}")
 
     @property
     def current_player_id(self) -> str:
-        """
-        Get the ID of the current player.
+        """Fetches the ID of the current player.
 
-        :return: ID of the current player.
-        :rtype: str
+        Return:
+            ID of the current player.
         """
-        return list(self.players.keys())[self.current_player_index]
+        return list(self.players.keys())[self.player_index]
 
     def add_player(self, player_name: str) -> str:
-        """
-        Adds a player to the game.
+        """Adds a player to the game.
 
-        :param player_name: Name of the player.
-        :type player_name: str
-        :return: ID of the new player.
-        :rtype: str
+        Args:
+            player_name (str): The name of the player.
+
+        Returns:
+            str: The ID of the player that was added.
         """
-        player_id = str(uuid.uuid4())
+        # Generate a random UUID for the player ID and add the player to the game
+        player_id = str(uuid4())
+        logger.info(
+            f"Adding player {player_id} to game {self.game_id}")
         self.players[player_id] = Player(self, player_name)
-        logger.info(f"Added player: {player_name} {player_id} to game {self.game_id}")
         return player_id
-    
-    def remove_player(self, player_id: str) -> None:
-        """
-        Removes a player from the game and adds their cards back to the deck. if its their turn it runs the end_turn function.
 
-        :param player_id: ID of the player to remove.
-        :type player_id: str
+    def remove_player(self, player_id: str) -> None:
+        """Removes a player from the game.
+
+        Args:
+            player_id (str): The ID of the player to remove.
         """
+        logger.info(f"Removing {player_id} from game {self.game_id}")
+        
         player_object = self.players.get(player_id)
-                
+
         # If the player being removed comes before the current player
         if self.game_direction:
-            if list(self.players.keys()).index(player_id) < self.current_player_index:
+            if list(self.players.keys()).index(player_id) < self.player_index:
                 # Decrement the current player index to account for the player being removed
-                self.current_player_index -= 1
+                self.player_index -= 1
             # Removing a player does the same as incrementing player_index by 1
-            if self.current_player_index >= len(self.players)-1:
+            if self.player_index >= len(self.players)-1:
                 # If the player_index is out of bounds, reset it to 0
-                self.current_player_index = 0
+                self.player_index = 0
 
         # TODO: do the same logic when it is a negative game direction
         # TODO: wild cards colour should be reset to None
         self.deck.cards += player_object.hand
         del self.players[player_id]
 
-        logger.info(f"Removed player: {player_id} from game {self.game_id}")
-
-    def start_game(self):
-        """
-        Starts the game by selecting the starting card and determining the initial player.
+    def start_game(self) -> None:
+        """Starts the game, selecting the starting card and determining the initial player.
 
         This method continues to select and discard cards until a number card is selected.
         It then sets the current player for the game.
@@ -92,41 +120,42 @@ class Game:
 
         If a player is added after the game has started, the `add_player` is method overwritten so it will do nothing.
         """
+        logger.info(f"Starting game {self.game_id}")
+
         while True:
             # Keep selecting and discarding cards until a number card is selected
             start_card = self.deck.pick_card()
             self.deck.discard.append(start_card)
             if start_card.light.type == "Number":
-                logger.debug(f"Selected start card {[start_card.light.side, start_card.dark.side][self.deck.flip]}")
                 break
-            logger.debug(f"Selecting new start card {[start_card.light.side, start_card.dark.side][self.deck.flip]}")
 
-        self.current_player_index = randint(0, len(self.players)-1)
-        self.started = True 
-        logger.info(f"Game started {self.game_id}")
+        self.player_index = randint(0, len(self.players)-1)
+        self.started = True
 
-    def get_game_state(self, player_id):
+    def get_game_state(self, player_id) -> dict:
+        """Returns the current state of the game for a given player, from their 'view' of the game only showing the back of other players cards
+
+        Args:
+            player_id (str): The ID of the player to get the game state for.
+
+        Returns:
+            A dict containing the game state for the player that requested it, this data changes depending if the game has started or not.
+
+            dict: The game state for the player.
         """
-        Returns the current state of the game for a given player, from their 'view' of the game only showing the back of other players cards
+        if self.started:
 
-        :param player_id: ID of the player
-        :type player_id: str
-        :return: Dictionary containing the discard pile, the player's hand, and the back of the opponent's hands
-        :rtype: dict
-        """
-        logger.info(f"fetching game state for player {player_id} in game {self.game_id} {len(self.players)} players")
-
-        if self.started:   
-
-            discard_side = [self.deck.discard[-1].light.side, self.deck.discard[-1].dark.side][self.deck.flip]
+            discard_side = [self.deck.discard[-1].light.side,
+                            self.deck.discard[-1].dark.side][self.deck.flip]
             player_object = self.players.get(player_id)
 
             player_hand = []
             for card in player_object.hand:
                 card_side = [card.light.side, card.dark.side][self.deck.flip]
-                is_playable = (card_side["colour"] == discard_side["colour"] or card_side["action"] == discard_side["action"]) and player_id == self.current_player_id
+                is_playable = (card_side["colour"] == discard_side["colour"] or card_side["action"]
+                               == discard_side["action"]) and player_id == self.current_player_id
                 player_hand.append(
-                        {
+                    {
                         "colour": card_side["colour"],
                         "action": card_side["action"],
                         "isPlayable": is_playable
@@ -138,7 +167,8 @@ class Game:
                 if opponent_id != player_id:
                     cards = []
                     for card in opponent.hand:
-                        card_side = [card.light.side, card.dark.side][(self.deck.flip + 1) % 2]
+                        card_side = [card.light.side,
+                                     card.dark.side][(self.deck.flip + 1) % 2]
                         cards.append(
                             {
                                 "colour": card_side["colour"],
@@ -168,46 +198,63 @@ class Game:
             player_names = [player.name for player in self.players.values()]
             return ({"type": "lobby", "playerNames": player_names, "isHost": is_host, "gameId": self.game_id, "playerId": player_id})
 
-    def play_card(self, player_id, card_index):
+    def play_card(self, player_id, card_index) -> bool:
+        """Plays a card from the player's hand.
 
-        # Checks if the card is playable to prevent cheating from the client
+        Args:
+            player_id (int): The ID of the player who is playing the card.
+            card_index (int): The index of the card in the player's hand.
+
+        Returns:
+            bool: True if the card pick was valid and the game state should be broadcasted, False otherwise.
+        """
+        logger.debug(
+            f"Playing card {card_index} for player {player_id} in game {self.game_id}")
+        
         player_object = self.players.get(player_id)
         card = player_object.hand[card_index]
         card_side = [card.light.side, card.dark.side][self.deck.flip]
-        discard_side = [self.deck.discard[-1].light.side, self.deck.discard[-1].dark.side][self.deck.flip]
-        is_playable = (card_side["colour"] == discard_side["colour"] or card_side["action"] == discard_side["action"]) and player_id == self.current_player_id
+        discard_side = [self.deck.discard[-1].light.side,
+                        self.deck.discard[-1].dark.side][self.deck.flip]
 
+        # Checks if the card is playable to prevent cheating from the client
+        is_playable = (card_side["colour"] == discard_side["colour"] or card_side["action"]
+                       == discard_side["action"]) and player_id == self.current_player_id
         if player_id == self.current_player_id and is_playable:
             # Remove the card from the player hand and add it to the discard pile
             self.players[player_id].hand.remove(card)
             self.deck.discard.append(card)
 
-            self.prerequisite_func = [card.light, card.dark][self.deck.flip].behaviour
-            card_side = [card.light, card.dark][self.deck.flip]
-            logger.debug(f"Player {player_id} selected card {card_side} removed adding prequisite_func to queue")
-            
+            # Set the prerequisite_func to the behaviour of the card that was played
+            self.prerequisite_func = [card.light,
+                                      card.dark][self.deck.flip].behaviour
             self.end_turn()
-
-            # When true is returned it tells the API to broadcast the gamestate as the card play was valid
             return True
 
-    def pick_card(self, player_id):
+    def pick_card(self, player_id) -> bool:
+        """Picks a card from the deck.
+
+        Returns:
+            bool: True if the card pick was valid and the game state should be broadcasted, False otherwise.
+        """
+        logger.debug(
+            f"Picking up card for player {player_id} in game {self.game_id}")
 
         if player_id == self.current_player_id:
             # Pick a card from the deck and add it to the player's hand
             self.players[player_id].hand.append(self.deck.pick_card())
-
             self.end_turn()
-
-            # When true is returned it tells the API to broadcast the gamestate as the card play was valid
             return True
 
-    def end_turn(self):
+    def end_turn(self) -> None:
+        """Ends the current player's turn and sets the next player as the current player."""
+        logger.debug(
+            f"Ending turn for game {self.game_id}, current player is {self.current_player_id}")
 
         # Update the current player index based on the direction of the game, kept in bounds with Modulo operator
-        self.current_player_index  = (self.current_player_index  + self.game_direction) % len(self.players)
+        self.player_index = (self.player_index +
+                             self.game_direction) % len(self.players)
 
         self.prerequisite_func(self)
-        self.prerequisite_func = lambda self=self: logger.debug("Running default prerequisite_func")
-
-        logger.debug(f"Incrementing current player index to {self.current_player_index} and player id to {self.current_player_id} and running prerequisite_func")
+        self.prerequisite_func = lambda self: logger.debug(
+            f"Running default prerequisite_func for game {self.game_id}")

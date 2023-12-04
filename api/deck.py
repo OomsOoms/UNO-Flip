@@ -1,159 +1,247 @@
+"""This module defines classes for representing a deck of UNO Flip cards.
+
+Classes:
+    Side: Represents a side of a card. It contains the action and colour of the side.
+    Card: Represents a card in the game. It contains a light and dark side.
+    Number: Represents a number card in the game. It inherits from Side.
+    Flip: Represents a flip card in the game. It inherits from Side.
+    Skip: Represents a skip card in the game. It inherits from Side.
+    SkipEveryone: Represents a skip everyone card in the game. It inherits from Side.
+    Reverse: Represents a reverse card in the game. It inherits from Side.
+    DrawOne: Represents a draw one card in the game. It inherits from Side.
+    DrawFive: Represents a draw five card in the game. It inherits from Side.
+    Wild: Represents a wild card in the game. It inherits from Side.
+    WildDrawTwo: Represents a wild draw two card in the game. It inherits from Side.
+    WildDrawColour: Represents a wild draw colour card in the game. It inherits from Side.
+
+Deck: Represents a deck of UNO Flip cards. It manages the cards in the deck, including shuffling and dealing.
+"""
+
 import random
 
 from utils.custom_logger import CustomLogger
 
 logger = CustomLogger(__name__)
 
-# Create a Card class
-class Card:
 
-    def __init__(self, light_side, dark_side):
+class Side:
+    """A class to represent a side of a card.
+
+    Attributes:
+        side (dict): A list containing the action and colour of the side
+        type (str): The name of the class
+    """
+
+    def __init__(self, side: str, type: dict):
+        self.side = side
+        self.type = type
+
+
+class Card:
+    """A class to represent a card in the game.
+
+    Attributes:
+        light (Side): The light side of the card
+        dark (Side): The dark side of the card
+    """
+
+    def __init__(self, light_side: Side, dark_side: Side):
         self.light = light_side
         self.dark = dark_side
 
-# Create a Side class
-class Side:
 
-    def __init__(self, side, type):
-        # eg. ["1", "Yellow"]
-        self.side = side
-        # Name of the class
-        self.type = type
-
-# Create different classes for different types of card sides that inherit from the Side class
 class Number(Side):
+    """A class to represent a number card in the game.
+
+    This is the same for all action classes.
+    
+    Attributes:
+        side (dict): A list containing the action and colour of the side
+        type (str): The name of the class
+    """
 
     def __init__(self, side):
         super().__init__(side, self.__class__.__name__)
 
     def behaviour(self, game):
         # Does nothing
-        logger.debug(f"Played a number card, side: {self.side}")
+        logger.debug(f"Behaviour of {self.side} called")
         pass
 
+
 class Flip(Side):
+
     def __init__(self, side):
         super().__init__(side, self.__class__.__name__)
 
     def behaviour(self, game):
-        # Reverse the order of the discard pile and change the flip value
+        """Flips the discard pile (list) order and changes the flip value."""
         game.deck.flip = (game.deck.flip + 1) % 2
         game.deck.discard = game.deck.discard[::-1]
-        logger.debug(f"Flipped the discard pile, flip value: {game.deck.flip}")
+        logger.debug(
+            f"Behaviour of {self.side} called. Flipped the discard pile, flip value: {game.deck.flip}")
+
 
 class Skip(Side):
+
     def __init__(self, side):
         super().__init__(side, self.__class__.__name__)
 
     def behaviour(self, game):
-        # Skips the next player by incrementing or decrementing the current_player_index by 1 depending on the direction
-        game.current_player_index  = (game.current_player_index  + game.game_direction * -1) % len(game.players)
-        logger.debug(f"Skipped the next player, current player index: {game.current_player_index}")
+        """Skips the next player, increments the player_index by 1."""
+        game.player_index = (game.player_index +
+                             game.game_direction * -1) % len(game.players)
+        logger.debug(
+            f"Behaviour of {self.side} called. Skipped the next player, current player index: {game.player_index}")
+
 
 class SkipEveryone(Side):
+
     def __init__(self, side):
         super().__init__(side, self.__class__.__name__)
 
     def behaviour(self, game):
-        # deinrement the current_player_index by 1 depending on the direction so when incremented it stays the same
-        game.current_player_index  = (game.current_player_index  + game.game_direction) % len(game.players)
-        logger.debug(f"Skipped everyone, current player index: {game.current_player_index}")
+        """Skips everyone, increments the player_index by 1."""
+        game.player_index = (game.player_index +
+                             game.game_direction) % len(game.players)
+        logger.debug(
+            f"Behaviour of {self.side} called. Skipped everyone, current player index: {game.player_index}")
+
 
 class Reverse(Side):
+
     def __init__(self, side):
         super().__init__(side, self.__class__.__name__)
 
     def behaviour(self, game):
-        # Reverse the order the current_player_index will increment
+        """Reverses the game direction."""
         game.game_direction *= -1
-        logger.debug(f"Reversed the game direction, game direction: {game.game_direction}")
+        logger.debug(
+            f"Behaviour of {self.side} called. Reversed the game direction, game direction: {game.game_direction}")
+
 
 class DrawOne(Side):
+
     def __init__(self, side):
         super().__init__(side, self.__class__.__name__)
 
     def behaviour(self, game):
+        """Draws one card from the deck and adds it to the current player's hand."""
+        # Skip the players turn
+        game.player_index = (game.player_index +
+                             game.game_direction) % len(game.players)
+        # Draw a card and add it to the current player's hand
         current_player_hand = game.players[game.current_player_id].hand
         current_player_hand.append(game.deck.pick_card())
-        # Skip the players turn
-        game.current_player_index  = (game.current_player_index  + game.game_direction) % len(game.players)
-        logger.debug(f"Drew 1 card, current player hand: {current_player_hand}")
+        logger.debug(
+            f"Behaviour of {self.side} called. Drew 1 card, current player hand: {current_player_hand}")
+
 
 class DrawFive(Side):
+
     def __init__(self, side):
         super().__init__(side, self.__class__.__name__)
 
     def behaviour(self, game):
+        """Draws five cards from the deck and adds them to the current player's hand.s"""
+        # Skip the players turn
+        game.player_index = (game.player_index +
+                             game.game_direction) % len(game.players)
+        # Draw 5 cards and add them to the current player's hand
         current_player_hand = game.players[game.current_player_id].hand
         for _ in range(5):
             current_player_hand.append(game.deck.pick_card())
-        # Skip the players turn
-        game.current_player_index  = (game.current_player_index  + game.game_direction) % len(game.players)
-        logger.debug(f"Drew 5 cardx, current player hand: {current_player_hand}")
+        logger.debug(
+            f"Behaviour of {self.side} called. Drew 5 cardx, current player hand: {current_player_hand}")
+
 
 class Wild(Side):
+
     def __init__(self, side):
         super().__init__(side, self.__class__.__name__)
 
     def behaviour(self, game):
-        colour = input("Pick a colour ")
-        self.side = [colour]
-        logger.debug(f"Changed the colour to {colour}")
+        pass  # TODO: Implement this behaviour
+
 
 class WildDrawTwo(Side):
+
     def __init__(self, side):
         super().__init__(side, self.__class__.__name__)
 
     def behaviour(self, game):
-        colour = input("Pick a colour ")
-        self.side = [colour]
+        pass  # TODO: Implement this behaviour
 
-        pass # TODO: Implement this behaviour
-            
+
 class WildDrawColour(Side):
+
     def __init__(self, side):
         super().__init__(side, self.__class__.__name__)
 
     def behaviour(self, game):
-        colour = input("Pick a colour ")
-        self.side = [colour]
+        pass  # TODO: Implement this behaviour
 
-        pass # TODO: Implement this behaviour
 
-# Create a Deck class
 class Deck:
-    # Create a method to deal a hand of cards to a player
-    def deal_hand(self):
+    """A class to represent a deck of cards.
+    
+    Attributes:
+        cards (list): A list of cards
+        discard (list): A list of cards that have been discarded
+    """
+
+    def deal_hand(self) -> list:
+        """Deals a hand of 7 cards to a player.
+        
+        Returns:
+            list: A list of cards
+        """
         hand = []
         for x in range(7):
             # pick a random card from the list of cards
             card = random.choice(self.cards)
-            self.cards.remove(card)  # remove the card from the list of cards
-            hand.append(card)  # add the card to the player's hand
+            self.cards.remove(card) # remove the card from the list of cards
+            hand.append(card) # add the card to the player's hand
 
         return hand
-    
-    def place_card(self, card):
+
+    def place_card(self, card) -> None:
+        """Places a card on the discard pile.
+        
+        Args:
+            card (Card): The card to place on the discard pile
+        """
         sides = (card.light, card.dark)
         self.discard.append(card)
         side = sides[self.flip]
         side.behaviour(self.game)
 
-    # Create a method to pick a random card from the deck
-    def pick_card(self):
+    def pick_card(self) -> Card:
+        """Picks a card from the deck.
+
+        Returns:
+            Card: A card from the deck
+        """
         if len(self.cards) == 0:
-            self.cards, self.discard = self.discard[1:], self.cards
+            # If the deck is empty, swap the discard pile and the deck
+            # apart from the last card in the discard pile 
+            self.cards, self.discard = self.discard[:-1], self.cards
             self.cards.extend(self.discard)
             self.discard = [self.cards.pop()]
 
         card = random.choice(self.cards)
-        self.cards.remove(card)  # Remove the card from the list of cards
+        self.cards.remove(card)
         return card
 
-    def __init__(self, game):
-        # 0, light side, 1, dark side
-        self.flip = 0
+    def __init__(self, game) -> None:
+        """Initialises the deck of cards.
+        
+        Args:
+            game (Game): The game object  
+        """
         self.game = game
+        self.flip = 0 # 0, light side, 1, dark side
+        
         # Create a list of cards
         self.discard = []
         self.cards = [

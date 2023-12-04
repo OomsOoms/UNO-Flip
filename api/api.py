@@ -1,3 +1,11 @@
+"""
+API module for the UNO Flip game.
+
+This module contains the FastAPI endpoints and websocket logic for the UNO Flip game.
+It provides functionality for creating and joining games, starting games, playing cards,
+and managing websocket connections.
+"""
+
 from fastapi import FastAPI, HTTPException, status, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -35,50 +43,28 @@ manager = ConectionManager()
 
 @app.get("/")
 async def root():
-    """
-    Endpoint to check if the API is online
+    """Endpoint to check if the API is online.
 
     Returns:
         str: A message indicating that the API is online
     """
     return "Online"
 
-@app.get("/admin_stats")
-async def admin_stats():
-    """
-    Admin page
-    """
-    game_stats = []
-    for game_id, game_object in games.items():
-        players = {player_id: player_object.name for player_id, player_object in game_object.players.items()}
-        game_stat = {
-            "gameId": game_id,
-            "players": players,
-            "host": list(players.keys())[0],
-            "currentPlayerIndex": game_object.current_player_index,
-            "currentPlayerId": game_object.current_player_id,
-            "deckLength": len(game_object.deck.cards),
-            "discardLength": len(game_object.deck.discard),
-            "discardTop": game_object.deck.discard[-1] if len(game_object.deck.discard) else None,
-            "gameDirection": game_object.game_direction,
-            "gameFlip": game_object.deck.flip,
-            "gameStarted": str(game_object.started)
-        }
-        game_stats.append(game_stat)
-
-    websocket_stats = {}
-    for connection_id, (game_id, player_id) in manager.active_connections.items():
-        websocket_stats[f"{str(connection_id.client[0])}:{str(connection_id.client[1])}"] = {"gameId": game_id, "playerId": player_id}
-    return {
-        "gameStats": game_stats,
-        "websocketStats": websocket_stats
-    }
-    
-
 @app.websocket("/lobby")
 async def lobby(websocket: WebSocket, game_id: int, player_id: str):
-    """
-    Endpoint for the websocket connection to the lobby
+    """Endpoint for the websocket connection to the lobby.
+
+    Provies authentication for the websocket connection and handles the lobby logic, such as adding and removing players.
+    It also broadcasts the game state to all players in the lobby.
+    And it handles removing players and deleting the game if they are empty.
+
+    Args:
+        websocket (WebSocket): The websocket connection
+        game_id (int): The ID of the game
+        player_id (str): The ID of the player
+    
+    Raises:
+        WebSocketDisconnect: If the websocket connection is closed
     """
     game_object = games.get(game_id)
 
@@ -88,11 +74,10 @@ async def lobby(websocket: WebSocket, game_id: int, player_id: str):
     else:
         await websocket.close()
         return
-    
     try:
         while True:
             message = await websocket.receive_json()
-            logger.debug(f"Received message {message} from {game_id}:{player_id}")
+
             if message["type"] == "play_card":
                 if game_object.play_card(player_id, int(message["index"])):
                     await manager.broadcast_gamestate(game_object)
@@ -104,21 +89,20 @@ async def lobby(websocket: WebSocket, game_id: int, player_id: str):
     # Only runs when an authenticated websocket disconnects
     except WebSocketDisconnect:
         manager.disconnect(websocket)
-        # Provides a 5 second window for the player to reconnect
+        # Wait 5 seconds to see if the player reconnects
         await asyncio.sleep(5)
         if [game_id, player_id] not in list(manager.active_connections.values()):
             if game_object.players.get(player_id):
                 game_object.remove_player(player_id)
                 if not len(game_object.players):
-                    del games[game_id]
                     logger.debug(f"Deleting game {game_id} because thre are no players left")
+                    del games[game_id]
                 else:
                     await manager.broadcast_gamestate(game_object)
     
 @app.post("/create_game")
 async def create_game(create_game_request: CreateGameRequest) -> dict:
-    """
-    Create a new game and add a player
+    """Create a new game and add a player.
 
     Args:
         create_game_request (CreateGameRequest): Request model for creating a game
@@ -126,16 +110,15 @@ async def create_game(create_game_request: CreateGameRequest) -> dict:
     Returns:
         dict: {'game_id': str, 'player_id': str} representing the game and player IDs.
     """
-    player_name = create_game_request.player_name
     game_object = Game()
+    player_name = create_game_request.player_name
     games[game_object.game_id] = game_object
     player_id = game_object.add_player(player_name)
     return JSONResponse(content={"game_id": game_object.game_id, "player_id": player_id}, status_code=status.HTTP_201_CREATED)
 
 @app.post("/join_game")
 async def join_game(join_id_request: JoinGameRequest) -> Union[dict, None]:
-    """
-    Endpoint for joining a game.
+    """Endpoint for joining a game.
 
     Args:
         join_id_request (JoinGameRequest): The request model for joining a game
@@ -146,7 +129,6 @@ async def join_game(join_id_request: JoinGameRequest) -> Union[dict, None]:
     Raises:
         HTTPException: If game is not found, game has already started or game is full
     """
-    # Retrieve the game and player name from the request
     game_object = games.get(join_id_request.game_id)
     player_name = join_id_request.player_name
 
@@ -159,15 +141,13 @@ async def join_game(join_id_request: JoinGameRequest) -> Union[dict, None]:
     if len(game_object.players) >= 10:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Game is full")
 
-    # Add the player to the game and get their ID
     player_id = game_object.add_player(player_name)
     await manager.broadcast_gamestate(game_object)
     return JSONResponse(content={"game_id": game_object.game_id, "player_id": player_id}, status_code=status.HTTP_201_CREATED)
 
 @app.post("/start_game")
 async def start_game(start_game_request: StartGameRequest) -> Union[bool, None]:
-    """
-    Start a game if the player is the host and there are enough players
+    """Start a game if the player is the host and there are enough players.
 
     Args:
         start_game_request (StartGameRequest): Request containing the game ID
@@ -180,29 +160,40 @@ async def start_game(start_game_request: StartGameRequest) -> Union[bool, None]:
     """
     game_object = games.get(start_game_request.game_id)
     
-    # Check if the game exists or has started and the player is the host
     if game_object.started or list(game_object.players.keys())[0] != start_game_request.player_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request to start the game")
 
     elif len(game_object.players) < 2:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Not enough players to start the game")
-    # Set game.started to True to prevent new players from joining and select a card and player
+
     game_object.start_game()
-    logger.debug(f"Starting game {game_object.game_id} with {len(game_object.players)} players and host {start_game_request.player_id}")
-    await manager.broadcast_gamestate(game_object)   
+    await manager.broadcast_gamestate(game_object)  
     return JSONResponse(content={"detail": "Game started", "started": True}, status_code=status.HTTP_200_OK) 
 
-@app.post("/select_card")
-async def select_card(select_card_request: SelectCardRequest) -> Union[dict, None]:
-    player_id = SelectCardRequest.player_id
-    
-    game_object = games.get(SelectCardRequest.game_id)
-    
-    if game_object.started and player_id != game_object.current_player_id:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request to start the game")
-    # TODO: Check if card is playable after selecting it, only playable cards can be selected but its just a check
-    # TODO: Pick up card if no cards are playable
+@app.get("/admin_stats")
+async def admin_stats():
+    """Retrieves the statistics for the admin page."""
+    game_stats = []
+    for game_id, game_object in games.items():
+        players = {player_id: player_object.name for player_id, player_object in game_object.players.items()}
+        game_stats.append({
+            "gameId": game_id,
+            "players": players,
+            "host": list(players.keys())[0],
+            "currentPlayerIndex": game_object.current_player_index,
+            "currentPlayerId": game_object.current_player_id,
+            "deckLength": len(game_object.deck.cards),
+            "discardLength": len(game_object.deck.discard),
+            "discardTop": game_object.deck.discard[-1] if len(game_object.deck.discard) else None,
+            "gameDirection": game_object.game_direction,
+            "gameFlip": game_object.deck.flip,
+            "gameStarted": str(game_object.started)
+        })
 
-# TODO: endpoint for Calling uno, calling uno on someone else
-# TODO: endpoint Card behaviour (prequisite_func)
-# TODO: ending a turn, call at the end of select card for now, will give seperate endpoint later if needed
+    websocket_stats = {}
+    for connection_id, (game_id, player_id) in manager.active_connections.items():
+        websocket_stats[f"{str(connection_id.client[0])}:{str(connection_id.client[1])}"] = {"gameId": game_id, "playerId": player_id}
+    return {
+        "gameStats": game_stats,
+        "websocketStats": websocket_stats
+    }
