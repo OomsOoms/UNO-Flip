@@ -52,16 +52,18 @@ class Card:
 
 class Number(Side):
     """A class to represent a number card in the game.
-
-    This is the same for all action classes.
     
     Attributes:
-        side (dict): A list containing the action and colour of the side
-        type (str): The name of the class
-    """
+        score (int): The score of the card which is an instance
+        attribute as each score is based off the face value of the card
 
+    Args:
+        side (dict): A list containing the action and colour of the side
+    """
+    
     def __init__(self, side):
         super().__init__(side, self.__class__.__name__)
+        self.score = int(side["action"])
 
     def behaviour(self, game):
         # Does nothing
@@ -70,6 +72,16 @@ class Number(Side):
 
 
 class Flip(Side):
+    """A class to represent a flip card in the game.
+    
+    Attributes:
+        score (int): The score of the card
+    
+    Args:
+        side (dict): A list containing the action and colour of the side
+    """
+
+    score = 20
 
     def __init__(self, side):
         super().__init__(side, self.__class__.__name__)
@@ -84,31 +96,37 @@ class Flip(Side):
 
 class Skip(Side):
 
+    score = 20
+
     def __init__(self, side):
         super().__init__(side, self.__class__.__name__)
 
     def behaviour(self, game):
-        """Skips the next player, increments the player_index by 1."""
-        game.player_index = (game.player_index +
+        """Skips the next player, increments the current_player_index by 1."""
+        game.current_player_index = (game.current_player_index +
                              game.game_direction * -1) % len(game.players)
         logger.debug(
-            f"Behaviour of {self.side} called. Skipped the next player, current player index: {game.player_index}")
+            f"Behaviour of {self.side} called. Skipped the next player, current player index: {game.current_player_index}")
 
 
 class SkipEveryone(Side):
 
+    score = 30
+
     def __init__(self, side):
         super().__init__(side, self.__class__.__name__)
 
     def behaviour(self, game):
-        """Skips everyone, increments the player_index by 1."""
-        game.player_index = (game.player_index +
+        """Skips everyone, increments the current_player_index by 1."""
+        game.current_player_index = (game.current_player_index +
                              game.game_direction) % len(game.players)
         logger.debug(
-            f"Behaviour of {self.side} called. Skipped everyone, current player index: {game.player_index}")
+            f"Behaviour of {self.side} called. Skipped everyone, current player index: {game.current_player_index}")
 
 
 class Reverse(Side):
+
+    score = 20
 
     def __init__(self, side):
         super().__init__(side, self.__class__.__name__)
@@ -122,13 +140,15 @@ class Reverse(Side):
 
 class DrawOne(Side):
 
+    score = 10
+
     def __init__(self, side):
         super().__init__(side, self.__class__.__name__)
 
     def behaviour(self, game):
         """Draws one card from the deck and adds it to the current player's hand."""
         # Skip the players turn
-        game.player_index = (game.player_index +
+        game.current_player_index = (game.current_player_index +
                              game.game_direction) % len(game.players)
         # Draw a card and add it to the current player's hand
         current_player_hand = game.players[game.current_player_id].hand
@@ -139,13 +159,15 @@ class DrawOne(Side):
 
 class DrawFive(Side):
 
+    score = 20
+
     def __init__(self, side):
         super().__init__(side, self.__class__.__name__)
 
     def behaviour(self, game):
         """Draws five cards from the deck and adds them to the current player's hand.s"""
         # Skip the players turn
-        game.player_index = (game.player_index +
+        game.current_player_index = (game.current_player_index +
                              game.game_direction) % len(game.players)
         # Draw 5 cards and add them to the current player's hand
         current_player_hand = game.players[game.current_player_id].hand
@@ -157,6 +179,8 @@ class DrawFive(Side):
 
 class Wild(Side):
 
+    score = 40
+
     def __init__(self, side):
         super().__init__(side, self.__class__.__name__)
 
@@ -166,6 +190,8 @@ class Wild(Side):
 
 class WildDrawTwo(Side):
 
+    score = 50
+
     def __init__(self, side):
         super().__init__(side, self.__class__.__name__)
 
@@ -174,6 +200,8 @@ class WildDrawTwo(Side):
 
 
 class WildDrawColour(Side):
+
+    score = 60
 
     def __init__(self, side):
         super().__init__(side, self.__class__.__name__)

@@ -9,7 +9,7 @@ and managing websocket connections.
 from fastapi import FastAPI, HTTPException, status, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from typing import Union # Used when a function can return multiple types
+from typing import Union  # Used when a function can return multiple types
 
 from api.game import Game
 from api.request_model import *
@@ -21,7 +21,8 @@ import asyncio
 # uvicorn api.api:app --reload --host 0.0.0.0
 # Run without logging:
 # uvicorn api.api:app --reload --host 0.0.0.0 --log-level critical
-app = FastAPI(title="UNO API", description="API for the UNO Flip game", version="0.1.0")
+app = FastAPI(title="UNO API",
+              description="API for the UNO Flip game", version="0.1.0")
 
 # Add the CORSMiddleware to the FastAPI instance
 app.add_middleware(
@@ -41,6 +42,7 @@ games = {}
 # Create a connection manager instance to manage the websocket connections
 manager = ConectionManager()
 
+
 @app.get("/")
 async def root():
     """Endpoint to check if the API is online.
@@ -49,6 +51,7 @@ async def root():
         str: A message indicating that the API is online
     """
     return "Online"
+
 
 @app.websocket("/lobby")
 async def lobby(websocket: WebSocket, game_id: int, player_id: str):
@@ -62,7 +65,7 @@ async def lobby(websocket: WebSocket, game_id: int, player_id: str):
         websocket (WebSocket): The websocket connection
         game_id (int): The ID of the game
         player_id (str): The ID of the player
-    
+
     Raises:
         WebSocketDisconnect: If the websocket connection is closed
     """
@@ -86,6 +89,10 @@ async def lobby(websocket: WebSocket, game_id: int, player_id: str):
                 if game_object.pick_card(player_id):
                     await manager.broadcast_gamestate(game_object)
 
+            elif message["type"] == "call_uno":
+                if game_object.call_uno(player_id):
+                    await manager.broadcast_gamestate(game_object)
+
     # Only runs when an authenticated websocket disconnects
     except WebSocketDisconnect:
         manager.disconnect(websocket)
@@ -95,18 +102,20 @@ async def lobby(websocket: WebSocket, game_id: int, player_id: str):
             if game_object.players.get(player_id):
                 game_object.remove_player(player_id)
                 if not len(game_object.players):
-                    logger.debug(f"Deleting game {game_id} because thre are no players left")
+                    logger.debug(
+                        f"Deleting game {game_id} because thre are no players left")
                     del games[game_id]
                 else:
                     await manager.broadcast_gamestate(game_object)
-    
+
+
 @app.post("/create_game")
 async def create_game(create_game_request: CreateGameRequest) -> dict:
     """Create a new game and add a player.
 
     Args:
         create_game_request (CreateGameRequest): Request model for creating a game
-        
+
     Returns:
         dict: {'game_id': str, 'player_id': str} representing the game and player IDs.
     """
@@ -115,6 +124,7 @@ async def create_game(create_game_request: CreateGameRequest) -> dict:
     games[game_object.game_id] = game_object
     player_id = game_object.add_player(player_name)
     return JSONResponse(content={"game_id": game_object.game_id, "player_id": player_id}, status_code=status.HTTP_201_CREATED)
+
 
 @app.post("/join_game")
 async def join_game(join_id_request: JoinGameRequest) -> Union[dict, None]:
@@ -125,7 +135,7 @@ async def join_game(join_id_request: JoinGameRequest) -> Union[dict, None]:
 
     Returns:
         Union[dict, None]: A dictionary containing the game ID and player ID
-    
+
     Raises:
         HTTPException: If game is not found, game has already started or game is full
     """
@@ -133,17 +143,21 @@ async def join_game(join_id_request: JoinGameRequest) -> Union[dict, None]:
     player_name = join_id_request.player_name
 
     if game_object is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Game not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Game not found")
 
     if game_object.started:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Game has already started")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                            detail="Game has already started")
 
     if len(game_object.players) >= 10:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Game is full")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Game is full")
 
     player_id = game_object.add_player(player_name)
     await manager.broadcast_gamestate(game_object)
     return JSONResponse(content={"game_id": game_object.game_id, "player_id": player_id}, status_code=status.HTTP_201_CREATED)
+
 
 @app.post("/start_game")
 async def start_game(start_game_request: StartGameRequest) -> Union[bool, None]:
@@ -159,23 +173,27 @@ async def start_game(start_game_request: StartGameRequest) -> Union[bool, None]:
         HTTPException: If the game, number of players or host player are invalid for starting the game
     """
     game_object = games.get(start_game_request.game_id)
-    
+
     if game_object.started or list(game_object.players.keys())[0] != start_game_request.player_id:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request to start the game")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Invalid request to start the game")
 
     elif len(game_object.players) < 2:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Not enough players to start the game")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Not enough players to start the game")
 
     game_object.start_game()
-    await manager.broadcast_gamestate(game_object)  
-    return JSONResponse(content={"detail": "Game started", "started": True}, status_code=status.HTTP_200_OK) 
+    await manager.broadcast_gamestate(game_object)
+    return JSONResponse(content={"detail": "Game started", "started": True}, status_code=status.HTTP_200_OK)
+
 
 @app.get("/admin_stats")
 async def admin_stats():
     """Retrieves the statistics for the admin page."""
     game_stats = []
     for game_id, game_object in games.items():
-        players = {player_id: player_object.name for player_id, player_object in game_object.players.items()}
+        players = {player_id: player_object.name for player_id,
+                   player_object in game_object.players.items()}
         game_stats.append({
             "gameId": game_id,
             "players": players,
@@ -187,12 +205,14 @@ async def admin_stats():
             "discardTop": game_object.deck.discard[-1] if len(game_object.deck.discard) else None,
             "gameDirection": game_object.game_direction,
             "gameFlip": game_object.deck.flip,
-            "gameStarted": str(game_object.started)
+            "gameStarted": str(game_object.started),
+            "playerScores": (player_object.score for player_id, player_object in game_object.players.items())
         })
 
     websocket_stats = {}
     for connection_id, (game_id, player_id) in manager.active_connections.items():
-        websocket_stats[f"{str(connection_id.client[0])}:{str(connection_id.client[1])}"] = {"gameId": game_id, "playerId": player_id}
+        websocket_stats[f"{str(connection_id.client[0])}:{str(connection_id.client[1])}"] = {
+            "gameId": game_id, "playerId": player_id}
     return {
         "gameStats": game_stats,
         "websocketStats": websocket_stats

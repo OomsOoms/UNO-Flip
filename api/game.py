@@ -31,6 +31,21 @@ class Player:
         self.game = game
         self.hand = game.deck.deal_hand()
 
+    @property
+    def score(self):
+        """Calculates the score of the player's hand.
+
+        Returns:
+            int: The score of the player's hand.
+        """
+        total_score = 0
+        for card in self.hand:
+            card_side = [card.light, card.dark][self.game.deck.flip]
+            total_score += card_side.score
+        return total_score
+
+
+
 
 class Game:
     """Represents a game of UNO Flip.
@@ -38,13 +53,15 @@ class Game:
     The Game class manages the players, deck, game direction, and game state.
 
     Attributes:
-        players (dict): A dictionary of players in the game, with their IDs as keys.
-        player_index (int): The index of the current player in the list of players.
-        deck (Deck): The deck of cards in the game.
+        game_id (int): The ID of the game.
+        players (dict): A dictionary of players in the game, with the player ID as the key.
+        current_player_index (int): The index of the current player in the players list.
+        deck (Deck): The deck of cards for the game.
         game_direction (int): The direction of the game, 1 for clockwise, -1 for anti-clockwise.
         started (bool): Whether the game has started or not.
-        game_id (int): The ID of the game.
-        prerequisite_func (func): The function that is run at the start of the next turn, this is set to the behaviour of the card that was played.   
+        game_ended (bool): Whether the game has ended or not.
+        uno_called (bool): Whether Uno has been called or not.
+        prerequisite_func (func): The function that is run before the next player's turn.
     """
 
     def __init__(self) -> None:
@@ -53,10 +70,12 @@ class Game:
         logger.info(f"Creating game {self.game_id}")
 
         self.players = {}
-        self.player_index = 0
+        self.current_player_index = 0
         self.deck = Deck(self)
         self.game_direction = 1  # 1 for clockwise, -1 for anti-clockwise
         self.started = False
+        self.game_ended = False
+        self.uno_called = False
         self.prerequisite_func = lambda self: logger.debug(
             f"Running default prerequisite_func for game {self.game_id}")
 
@@ -67,7 +86,7 @@ class Game:
         Return:
             ID of the current player.
         """
-        return list(self.players.keys())[self.player_index]
+        return list(self.players.keys())[self.current_player_index]
 
     def add_player(self, player_name: str) -> str:
         """Adds a player to the game.
@@ -92,18 +111,18 @@ class Game:
             player_id (str): The ID of the player to remove.
         """
         logger.info(f"Removing {player_id} from game {self.game_id}")
-        
+
         player_object = self.players.get(player_id)
 
         # If the player being removed comes before the current player
         if self.game_direction:
-            if list(self.players.keys()).index(player_id) < self.player_index:
+            if list(self.players.keys()).index(player_id) < self.current_player_index:
                 # Decrement the current player index to account for the player being removed
-                self.player_index -= 1
-            # Removing a player does the same as incrementing player_index by 1
-            if self.player_index >= len(self.players)-1:
-                # If the player_index is out of bounds, reset it to 0
-                self.player_index = 0
+                self.current_player_index -= 1
+            # Removing a player does the same as incrementing current_player_index by 1
+            if self.current_player_index >= len(self.players)-1:
+                # If the current_player_index is out of bounds, reset it to 0
+                self.current_player_index = 0
 
         # TODO: do the same logic when it is a negative game direction
         # TODO: wild cards colour should be reset to None
@@ -129,7 +148,7 @@ class Game:
             if start_card.light.type == "Number":
                 break
 
-        self.player_index = randint(0, len(self.players)-1)
+        self.current_player_index = randint(0, len(self.players)-1)
         self.started = True
 
     def get_game_state(self, player_id) -> dict:
@@ -143,60 +162,67 @@ class Game:
 
             dict: The game state for the player.
         """
-        if self.started:
+        if self.game_ended:
+            return {
+                "type": "game_over",
+                "gameId": self.game_id,
+                "playerId": player_id,
+                "playerScores": "player_scores",
+            }
 
+        elif self.started:
+            player_object = self.players.get(player_id)
             discard_side = [self.deck.discard[-1].light.side,
                             self.deck.discard[-1].dark.side][self.deck.flip]
-            player_object = self.players.get(player_id)
-
-            player_hand = []
-            for card in player_object.hand:
-                card_side = [card.light.side, card.dark.side][self.deck.flip]
-                is_playable = (card_side["colour"] == discard_side["colour"] or card_side["action"]
-                               == discard_side["action"]) and player_id == self.current_player_id
-                player_hand.append(
-                    {
-                        "colour": card_side["colour"],
-                        "action": card_side["action"],
-                        "isPlayable": is_playable
-                    }
-                )
-
-            opponent_hands = []
-            for opponent_id, opponent in self.players.items():
-                if opponent_id != player_id:
-                    cards = []
-                    for card in opponent.hand:
-                        card_side = [card.light.side,
-                                     card.dark.side][(self.deck.flip + 1) % 2]
-                        cards.append(
-                            {
-                                "colour": card_side["colour"],
-                                "action": card_side["action"]
-                            }
-                        )
-                    opponent_hands.append(
+            player_hand = [
+                {
+                    "colour": [card.light.side, card.dark.side][self.deck.flip]["colour"],
+                    "action": [card.light.side, card.dark.side][self.deck.flip]["action"],
+                    "isPlayable":
+                        ([card.light.side, card.dark.side][self.deck.flip]["colour"]
+                         == discard_side["colour"] or [card.light.side, card.dark.side][self.deck.flip]["action"]
+                         == discard_side["action"]) and player_id == self.current_player_id
+                }
+                for card in player_object.hand
+            ]
+            opponent_hands = [
+                {
+                    "playerName": opponent.name,
+                    "cards": [
                         {
-                            "playerName": opponent.name,
-                            "cards": cards
+                            "colour": [card.light.side, card.dark.side][(self.deck.flip + 1) % 2]["colour"],
+                            "action": [card.light.side, card.dark.side][(self.deck.flip + 1) % 2]["action"]
                         }
-                    )
+                        for card in opponent.hand
+                    ]
+                }
+                for opponent_id, opponent in self.players.items()
+                if opponent_id != player_id
+            ]
 
             return {
                 "type": "game",
-                "discard": discard_side,
-                "playerHand": player_hand,
-                "opponentHands": opponent_hands,
-                "playerName": player_object.name,
-                "isTurn": player_id == self.current_player_id,
-                "currentPlayerName": self.players[self.current_player_id].name,
                 "gameId": self.game_id,
+                "unoCalled": self.uno_called,
+                "currentPlayerName": self.players[self.current_player_id].name,
+                "discard": discard_side,
+                "playerId": player_id,
+                "playerName": player_object.name,
+                "playerHand": player_hand,
+                "isTurn": player_id == self.current_player_id,
+                "opponentHands": opponent_hands,
             }
 
         else:
             is_host = next(iter(self.players)) == player_id
             player_names = [player.name for player in self.players.values()]
-            return ({"type": "lobby", "playerNames": player_names, "isHost": is_host, "gameId": self.game_id, "playerId": player_id})
+            return {
+                "type": "lobby",
+                "gameId": self.game_id,
+                "playerId": player_id,
+                "isHost": is_host,
+                "playerNames": player_names,
+            }
 
     def play_card(self, player_id, card_index) -> bool:
         """Plays a card from the player's hand.
@@ -208,9 +234,6 @@ class Game:
         Returns:
             bool: True if the card pick was valid and the game state should be broadcasted, False otherwise.
         """
-        logger.debug(
-            f"Playing card {card_index} for player {player_id} in game {self.game_id}")
-        
         player_object = self.players.get(player_id)
         card = player_object.hand[card_index]
         card_side = [card.light.side, card.dark.side][self.deck.flip]
@@ -221,6 +244,9 @@ class Game:
         is_playable = (card_side["colour"] == discard_side["colour"] or card_side["action"]
                        == discard_side["action"]) and player_id == self.current_player_id
         if player_id == self.current_player_id and is_playable:
+            logger.debug(
+                f"Playing card {card_index} for player {player_id} in game {self.game_id}")
+
             # Remove the card from the player hand and add it to the discard pile
             self.players[player_id].hand.remove(card)
             self.deck.discard.append(card)
@@ -237,10 +263,10 @@ class Game:
         Returns:
             bool: True if the card pick was valid and the game state should be broadcasted, False otherwise.
         """
-        logger.debug(
-            f"Picking up card for player {player_id} in game {self.game_id}")
 
         if player_id == self.current_player_id:
+            logger.debug(
+                f"Picking up card for player {player_id} in game {self.game_id}")
             # Pick a card from the deck and add it to the player's hand
             self.players[player_id].hand.append(self.deck.pick_card())
             self.end_turn()
@@ -248,13 +274,34 @@ class Game:
 
     def end_turn(self) -> None:
         """Ends the current player's turn and sets the next player as the current player."""
+        if len(self.players[self.current_player_id].hand) == 0:
+            logger.info(
+                f"Player {self.current_player_id} has won game {self.game_id}")
+            self.game_ended = True
+            return
+        
         logger.debug(
             f"Ending turn for game {self.game_id}, current player is {self.current_player_id}")
 
         # Update the current player index based on the direction of the game, kept in bounds with Modulo operator
-        self.player_index = (self.player_index +
-                             self.game_direction) % len(self.players)
+        self.current_player_index = (
+            self.current_player_index + self.game_direction) % len(self.players)
 
         self.prerequisite_func(self)
         self.prerequisite_func = lambda self: logger.debug(
             f"Running default prerequisite_func for game {self.game_id}")
+
+    def call_uno(self, player_id):
+        """Calls Uno for the player.
+
+        Args:
+            player_id (int): The ID of the player who is calling Uno.   
+        """
+
+        # if the current player calls uno and has 1 card left nothing happpens
+        # if any player calls uno and the current player has already called uno they draw 2 cards
+        # if any player calls uno and the current player has more than 1 card left they draw 2 cards
+        # if no one calls uno they have until the next player plays their turn to call uno
+        # uno must still be able to be called for the current player and also call out the last player if they missed uno call? not sure about this one
+
+        return False

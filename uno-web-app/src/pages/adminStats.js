@@ -65,6 +65,7 @@ function GameStatsItem({ game }) {
       <p>Host: {game.host}</p>
       <p>Current Player Id: {game.currentPlayerId}</p>
       <p>Current Player Index: {game.currentPlayerIndex}</p>
+      <p>Player scores: {game.playerScores}</p>
       <table>
         <tr>
           <td>Deck Length</td>

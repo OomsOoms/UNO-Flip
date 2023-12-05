@@ -24,9 +24,14 @@ export default function GameRoom() {
     };
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      data.ws = ws;
-      setLobbyData(data);
-      console.log("Received data from websocket: ", data);
+      // These messages change the state of the component
+      if (data.type === "game" || data.type === "lobby" || data.type === "game_over") {
+        data.ws = ws;
+        setLobbyData(data);
+      // These messages do not change the state of the component
+      } else if (data.type === "call_uno") {
+        console.log(`${data.playerName} called UNO!`);
+      }
     };
     ws.onerror = () => {
       if (document.referrer.includes(window.location.origin)) {
@@ -48,6 +53,8 @@ export default function GameRoom() {
       return <Lobby lobbyData={lobbyData} />;
     case "game":
       return <Game lobbyData={lobbyData} />;
+    case "game_over":
+      return <p>Game Over</p>;
     default:
       return <p>Loading...</p>;
   }
@@ -96,17 +103,24 @@ const Lobby = ({ lobbyData: { playerNames, isHost, gameId, playerId } }) => {
   );
 }
 
-function Game({ lobbyData: { discard, playerHand, isTurn, ws } }) {
+function Game({ lobbyData: { discard, playerHand, isTurn, unoCalled, ws } }) {
 
-  const PickCard = () => {
+  const pickCard = () => {
     ws.send(JSON.stringify({
       type: "pick_card",
     }));
   };
 
+  const callUno = () => {
+    ws.send(JSON.stringify({
+      type: "call_uno",
+    }));
+  };
+
+
+  
   return (
     <div id="gameContainer">
-
       <div id="discardContainer">
         <div
           style={{ backgroundColor: discard.colour }}
@@ -115,8 +129,15 @@ function Game({ lobbyData: { discard, playerHand, isTurn, ws } }) {
           {discard.action}
         </div>
         <button
+          id="callUnoButton"
+          onClick={callUno}
+          className={`${unoCalled ? "disabled" : ""}`}
+        >
+          Call UNO!
+        </button>
+        <button
           id="pickCardButton"
-          onClick={PickCard}
+          onClick={pickCard}
           className={`${isTurn ? "" : "disabled"}`}
         >
           Pick up card
