@@ -14,7 +14,7 @@ Functions:
 from fastapi import WebSocket
 from typing import Dict
 
-from api.game import Game
+from game_logic.game import Game
 from utils.custom_logger import CustomLogger
 
 logger = CustomLogger(__name__)

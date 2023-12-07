@@ -1,5 +1,4 @@
-"""
-API module for the UNO Flip game.
+"""API module for the UNO Flip game.
 
 This module contains the FastAPI endpoints and websocket logic for the UNO Flip game.
 It provides functionality for creating and joining games, starting games, playing cards,
@@ -11,16 +10,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from typing import Union  # Used when a function can return multiple types
 
-from api.game import Game, GameState
-from api.request_model import *
-from api.connection_manager import ConectionManager
+from game_logic.game import Game, GameState
+from utils.request_model import *
+from utils.connection_manager import ConectionManager
 from utils.custom_logger import CustomLogger
 import asyncio
 
 # Run with logging:
-# uvicorn api.api:app --reload --host 0.0.0.0
+# uvicorn main:app --reload --host 0.0.0.0
 # Run without logging:
-# uvicorn api.api:app --reload --host 0.0.0.0 --log-level critical
+# uvicorn main:app --reload --host 0.0.0.0 --log-level critical
 app = FastAPI(title="UNO API",
               description="API for the UNO Flip game", version="0.1.0")
 

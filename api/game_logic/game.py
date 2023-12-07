@@ -4,8 +4,8 @@ from uuid import uuid4
 from random import randint
 from enum import Enum
 
-from api.deck import *
-from api.cards import *
+from .deck import *
+from cards.uno_flip import *
 from utils.custom_logger import CustomLogger
 
 logger = CustomLogger(__name__)

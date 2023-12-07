@@ -6,7 +6,7 @@ The Deck class manages the cards, deals hands, and handles discards for the spec
 
 from random import choice
 
-from .cards import cards, Card
+from cards.uno_flip import cards, Card
 
 
 class Deck:
