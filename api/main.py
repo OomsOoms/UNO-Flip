@@ -81,7 +81,7 @@ async def lobby(websocket: WebSocket, game_id: int, player_id: str):
             message = await websocket.receive_json()
 
             if message["type"] == "play_card":
-                if game_object.play_card(player_id, int(message["index"])):
+                if game_object.play_card(player_id, int(message["index"]), message["wildColour"]):
                     await manager.broadcast_gamestate(game_object)
 
             elif message["type"] == "pick_card":
@@ -201,7 +201,7 @@ async def admin_stats():
             "currentPlayerId": game_object.players.current_player_id,
             "deckLength": len(game_object.deck.cards),
             "discardLength": len(game_object.deck.discard_pile),
-            "discardTop": game_object.deck.discard_pile[-1] if len(game_object.deck.discard_pile) else None,
+            "discardTop": game_object.deck.discard_pile[-1].face_value if len(game_object.deck.discard_pile) else None,
             "gameDirection": game_object.direction,
             "gameFlip": game_object.deck.flip,
             "gameStarted": str(game_object.state.value),

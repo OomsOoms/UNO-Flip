@@ -160,11 +160,7 @@ class Game:
             {
                 "colour": card.colour,
                 "action": card.action,
-                "isPlayable":
-                    (card.colour == discard.colour or
-                     card.action == discard.action) and
-                    player_id == self.players.current_player_id
-                    if discard else False
+                "isPlayable": card.is_playable() and player_id == self.players.current_player_id
             }
             for card in player_object.hand
         ]
@@ -190,6 +186,7 @@ class Game:
             "currentPlayerName": self.players.current_player.name,
             "opponentHands": opponent_hands,
             "playerNames": player_names,
+            "wildColours": Colour.LIGHT if self.deck.flip == 0 else Colour.DARK,
 
             "playerId": player_id,
             "playerName": self.players.players[player_id].name,
@@ -198,7 +195,7 @@ class Game:
             "isTurn": player_id == self.players.current_player_id,
         }
 
-    def play_card(self, player_id, card_index) -> bool:
+    def play_card(self, player_id, card_index, wild_colour) -> bool:
         """Plays a card from the player's hand.
 
         Args:
@@ -210,13 +207,14 @@ class Game:
         """
         player_object = self.players.players.get(player_id)
         card = player_object.hand[card_index]
-        discard = self.deck.discard_pile[-1]
 
-        # Checks if the card is playable to prevent cheating from the client
-        is_playable = (card.colour == discard.colour or card.action ==
-                       discard.action) and player_id == self.players.current_player_id
+        if wild_colour:
+            if wild_colour in Colour.LIGHT if self.deck.flip == 0 else Colour.DARK:
+                card.colour = wild_colour
+            else:
+                return
 
-        if player_id == self.players.current_player_id and is_playable:
+        if card.is_playable() and player_id == self.players.current_player_id:
             logger.debug(
                 f"Playing card {card_index} for player {player_id} in game {self.game_id}")
 

@@ -162,6 +162,7 @@ function Card({ index, card: { colour, action, isPlayable }, ws }) {
     ws.send(JSON.stringify({
       type: "play_card",
       index: index,
+      wildColour: "red", // TODO: implement wildColour selection
     }));
   }
 

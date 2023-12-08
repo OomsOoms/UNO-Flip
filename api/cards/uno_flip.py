@@ -15,6 +15,16 @@ class Colour(Enum):
     PURPLE = "purple"
     TURQUOISE = "turquoise"
 
+    @classmethod
+    @property
+    def LIGHT(cls):
+        return [cls.YELLOW.value, cls.RED.value, cls.BLUE.value, cls.GREEN.value]
+    
+    @classmethod
+    @property
+    def DARK(cls):
+        return [cls.ORANGE.value, cls.PINK.value, cls.PURPLE.value, cls.TURQUOISE.value]
+
 
 class Side:
     """A side of a card. A card has two sides, a light side and a dark side.
@@ -68,6 +78,13 @@ class Card:
     def colour(self):
         return self.light.colour if self.deck.flip == 0 else self.dark.colour
     
+    @colour.setter
+    def colour(self, colour):
+        if self.deck.flip == 0:
+            self.light.colour = colour
+        else:
+            self.dark.colour = colour
+
     @property
     def face_value(self):
         return {"action": self.action, "colour": self.colour}
@@ -76,8 +93,15 @@ class Card:
     def card_type(self):
         return self.light.card_type if self.deck.flip == 0 else self.dark.card_type
 
+    def is_playable(self):
+        discard_pile = self.deck.discard_pile
+        if discard_pile:
+            discard = discard_pile[-1]
+            return (self.colour == discard.colour or self.action == discard.action) or not self.colour
+
     def behaviour(self, game):
-        self.light.behaviour(game) if self.deck.flip == 0 else self.dark.behaviour(game)
+        self.light.behaviour(
+            game) if self.deck.flip == 0 else self.dark.behaviour(game)
 
     def __str__(self):
         return f"{self.colour.name} {self.action} {self.card_type.__name__}"
@@ -155,6 +179,8 @@ class Reverse(Side):
     def behaviour(self, game):
         logger.debug(f"Behaviour of {self.action} running")
         game.direction *= -1
+        game.players.increment_turn()
+        game.players.increment_turn()
 
 
 class DrawOne(Side):
@@ -221,6 +247,7 @@ class WildDrawColour(Side):
         logger.debug(f"Behaviour of {self.action} running")
         # TODO
 
+
 # TODO: Add the actual cards
 cards = [
     Card(Number(Colour.YELLOW, "1"), SkipEveryone(Colour.PINK)),
@@ -241,7 +268,7 @@ cards = [
     Card(Number(Colour.YELLOW, "8"), Number(Colour.ORANGE, "2")),
     Card(Number(Colour.YELLOW, "9"), Number(Colour.PURPLE, "4")),
     Card(Number(Colour.YELLOW, "9"), Number(Colour.TURQUOISE, "5")),
-    
+
     Card(Number(Colour.RED, "1"), Number(Colour.PURPLE, "2")),
     Card(Number(Colour.RED, "1"), Number(Colour.PINK, "3")),
     Card(Number(Colour.RED, "2"), DrawFive(Colour.PURPLE)),
