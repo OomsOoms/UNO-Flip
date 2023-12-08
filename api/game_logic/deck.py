@@ -4,7 +4,9 @@ This module contains the Deck class, representing a deck of cards used in a game
 The Deck class manages the cards, deals hands, and handles discards for the specified game.
 """
 
+import copy
 from random import choice
+
 
 class Deck:
     """Represents a deck of cards used in a game.
@@ -31,7 +33,7 @@ class Deck:
         self.game = game
         self.flip = 0
         self.discard_pile = []
-        self.cards = cards
+        self.cards = copy.deepcopy(cards)
 
         # Pass the deck instance to each card
         for card in self.cards:

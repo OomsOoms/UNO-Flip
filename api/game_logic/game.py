@@ -3,7 +3,7 @@
 from enum import Enum
 from random import randint
 
-from cards.uno_flip import Colour, Number, cards
+from cards import game_modes
 from utils.custom_logger import CustomLogger
 
 from .deck import Deck
@@ -30,10 +30,14 @@ class Game:
         self.game_id = randint(100000, 999999)
         logger.info(f"Creating game {self.game_id}")
 
-        self.direction = 1  # clockwise: 1, anti-clockwise: -1
-        self.deck = Deck(self, cards)
+        game_mode = game_modes["uno"]
+        self.name = game_mode["name"]
+        self.wild_colours = game_mode["wild_colours"]
+
+        self.deck = Deck(self, game_mode["cards"])
         self.players = Players(self)
         self.state = GameState.LOBBY
+        self.direction = 1  # clockwise: 1, anti-clockwise: -1
         self.prerequisite_func = lambda self: logger.debug(
             f"Running default prerequisite_func for game {self.game_id}")
 
@@ -54,7 +58,7 @@ class Game:
             while True:
                 card = self.deck.pick_card()
                 self.deck.discard_pile.append(card)
-                if card.card_type == Number:
+                if card.__class__.__name__ == "Number":
                     logger.debug(f"Start card {card.colour} {card.action}")
                     break
 
@@ -74,7 +78,7 @@ class Game:
         if card.is_playable() and player_id == self.players.current_player_id:
             # Check if the card is a wild card and set the colour
             if not card.colour:
-                if wild_colour in Colour.colours(self):
+                if wild_colour in self.wild_colours.colours(self):
                     card.colour = wild_colour
                 else:
                     return
@@ -169,11 +173,12 @@ class Game:
         ]
         return {
             "type": self.state.value,
+            "name": self.name,
             "gameId": self.game_id,
             "discard": self.deck.discard_pile[-1].face_value if self.deck.discard_pile else None,
             "currentPlayerName": self.players.current_player.name,
             "playerNames": player_names,
-            "wildColours": Colour.colours(self),
+            "wildColours": self.wild_colours.colours(self),
 
             "playerId": player_id,
             "playerName": self.players[player_id].name,

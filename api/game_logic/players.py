@@ -54,8 +54,6 @@ class Players:
 
         player_object = self.players.get(player_id)
 
-        # TODO: do the same logic when it is a negative game direction
-        # TODO: wild cards colour should be reset to None
         if self.game.direction:
             if list(self.players.keys()).index(player_id) < self.current_player_index:
                 self.current_player_index -= 1

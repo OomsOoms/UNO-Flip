@@ -59,7 +59,7 @@ export default function GameRoom() {
   }
 }
 
-const Lobby = ({ lobbyData: { playerNames, isHost, gameId, playerId } }) => {
+const Lobby = ({ lobbyData: { playerNames, isHost, gameId, playerId, name } }) => {
   const startGame = () => {
     const requestbody = {
       game_id: gameId,
@@ -78,7 +78,7 @@ const Lobby = ({ lobbyData: { playerNames, isHost, gameId, playerId } }) => {
   return (
     <>
       <div id="lobbyContainer">
-        <h1>Game Lobby</h1>
+        <h1>Game Lobby<br />{name}</h1>
         <div>
           <p>
             Players: {playerNames.length}/10 | ID {gameId}

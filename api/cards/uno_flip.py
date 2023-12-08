@@ -5,7 +5,7 @@ from utils.custom_logger import CustomLogger
 logger = CustomLogger(__name__)
 
 
-class Colour(Enum):
+class Colours(Enum):
     YELLOW = "yellow"
     RED = "red"
     BLUE = "blue"
@@ -18,9 +18,9 @@ class Colour(Enum):
     def colours(game_object) -> list:
         # Game object is only used in the flip version of the game
         if game_object.deck.flip == 0:
-            return [colour.value for colour in Colour][:4]
+            return [colour.value for colour in Colours][:4]
         else:
-            return [colour.value for colour in Colour][4:]
+            return [colour.value for colour in Colours][4:]
 
 
 class Side:
@@ -32,7 +32,7 @@ class Side:
         card_type (type): The type of the card. This is the class of the card.
     """
 
-    def __init__(self, colour: Colour, action: str, card_type):
+    def __init__(self, colour: Colours, action: str, card_type):
         self.colour = colour.value if colour else None
         self.action = action
         self.card_type = card_type
@@ -60,7 +60,6 @@ class Card:
     def __init__(self, light_side: Side, dark_side: Side):
         self.light = light_side
         self.dark = dark_side
-        # Only used for the UNO Flip! version of the game in properties
         self.deck = None
 
     @property
@@ -89,6 +88,13 @@ class Card:
     @property
     def card_type(self):
         return self.light.card_type if self.deck.flip == 0 else self.dark.card_type
+    
+    @property
+    def __class__(self):
+        if self.deck.flip == 0:
+            return self.light.__class__
+        else:
+            return self.dark.__class__
 
     def is_playable(self):
         discard_pile = self.deck.discard_pile
@@ -110,8 +116,6 @@ class Card:
 class Number(Side):
     """A number side of a card.
 
-    This is the same for all the action cards.
-
     Attributes:
         colour (Colour): The colour of the card.
         action (str): The action text of the card.
@@ -119,7 +123,7 @@ class Number(Side):
         score (int): The score of the card.
     """
 
-    def __init__(self, colour: Colour, action: str):
+    def __init__(self, colour: Colours, action: str):
         super().__init__(colour, action, self.__class__)
         self.score = int(action)
 
@@ -131,7 +135,7 @@ class Flip(Side):
 
     score = 20
 
-    def __init__(self, colour: Colour):
+    def __init__(self, colour: Colours):
         super().__init__(colour, self.__class__.__name__, self.__class__)
 
     def behaviour(self, game):
@@ -146,7 +150,7 @@ class Skip(Side):
 
     score = 20
 
-    def __init__(self, colour: Colour):
+    def __init__(self, colour: Colours):
         super().__init__(colour, self.__class__.__name__, self.__class__)
 
     def behaviour(self, game):
@@ -158,7 +162,7 @@ class SkipEveryone(Side):
 
     score = 30
 
-    def __init__(self, colour: Colour):
+    def __init__(self, colour: Colours):
         super().__init__(colour, self.__class__.__name__, self.__class__)
 
     def behaviour(self, game):
@@ -173,7 +177,7 @@ class Reverse(Side):
 
     score = 20
 
-    def __init__(self, colour: Colour):
+    def __init__(self, colour: Colours):
         super().__init__(colour, self.__class__.__name__, self.__class__)
 
     def behaviour(self, game):
@@ -187,7 +191,7 @@ class DrawOne(Side):
 
     score = 10
 
-    def __init__(self, colour: Colour):
+    def __init__(self, colour: Colours):
         super().__init__(colour, self.__class__.__name__, self.__class__)
 
     def behaviour(self, game):
@@ -201,7 +205,7 @@ class DrawFive(Side):
 
     score = 20
 
-    def __init__(self, colour: Colour):
+    def __init__(self, colour: Colours):
         super().__init__(colour, self.__class__.__name__, self.__class__)
 
     def behaviour(self, game):
@@ -261,125 +265,125 @@ class WildDrawColour(Side):
 
 
 cards = [
-    Card(Number(Colour.YELLOW, "1"), SkipEveryone(Colour.PINK)),
-    Card(Number(Colour.YELLOW, "1"), Wild()),
-    Card(Number(Colour.YELLOW, "2"), Number(Colour.TURQUOISE, "1")),
-    Card(Number(Colour.YELLOW, "2"), Number(Colour.TURQUOISE, "8")),
-    Card(Number(Colour.YELLOW, "3"), Number(Colour.PURPLE, "1")),
-    Card(Number(Colour.YELLOW, "3"), DrawFive(Colour.PINK)),
-    Card(Number(Colour.YELLOW, "4"), DrawFive(Colour.PINK)),
-    Card(Number(Colour.YELLOW, "4"), Flip(Colour.PURPLE)),
-    Card(Number(Colour.YELLOW, "5"), Number(Colour.TURQUOISE, "8")),
-    Card(Number(Colour.YELLOW, "5"), Number(Colour.PURPLE, "9")),
-    Card(Number(Colour.YELLOW, "6"), SkipEveryone(Colour.ORANGE)),
-    Card(Number(Colour.YELLOW, "6"), WildDrawColour()),
-    Card(Number(Colour.YELLOW, "7"), Number(Colour.ORANGE, "2")),
-    Card(Number(Colour.YELLOW, "7"), Number(Colour.PURPLE, "6")),
-    Card(Number(Colour.YELLOW, "8"), Number(Colour.PINK, "1")),
-    Card(Number(Colour.YELLOW, "8"), Number(Colour.ORANGE, "2")),
-    Card(Number(Colour.YELLOW, "9"), Number(Colour.PURPLE, "4")),
-    Card(Number(Colour.YELLOW, "9"), Number(Colour.TURQUOISE, "5")),
+    Card(Number(Colours.YELLOW, "1"), SkipEveryone(Colours.PINK)),
+    Card(Number(Colours.YELLOW, "1"), Wild()),
+    Card(Number(Colours.YELLOW, "2"), Number(Colours.TURQUOISE, "1")),
+    Card(Number(Colours.YELLOW, "2"), Number(Colours.TURQUOISE, "8")),
+    Card(Number(Colours.YELLOW, "3"), Number(Colours.PURPLE, "1")),
+    Card(Number(Colours.YELLOW, "3"), DrawFive(Colours.PINK)),
+    Card(Number(Colours.YELLOW, "4"), DrawFive(Colours.PINK)),
+    Card(Number(Colours.YELLOW, "4"), Flip(Colours.PURPLE)),
+    Card(Number(Colours.YELLOW, "5"), Number(Colours.TURQUOISE, "8")),
+    Card(Number(Colours.YELLOW, "5"), Number(Colours.PURPLE, "9")),
+    Card(Number(Colours.YELLOW, "6"), SkipEveryone(Colours.ORANGE)),
+    Card(Number(Colours.YELLOW, "6"), WildDrawColour()),
+    Card(Number(Colours.YELLOW, "7"), Number(Colours.ORANGE, "2")),
+    Card(Number(Colours.YELLOW, "7"), Number(Colours.PURPLE, "6")),
+    Card(Number(Colours.YELLOW, "8"), Number(Colours.PINK, "1")),
+    Card(Number(Colours.YELLOW, "8"), Number(Colours.ORANGE, "2")),
+    Card(Number(Colours.YELLOW, "9"), Number(Colours.PURPLE, "4")),
+    Card(Number(Colours.YELLOW, "9"), Number(Colours.TURQUOISE, "5")),
 
-    Card(Number(Colour.RED, "1"), Number(Colour.PURPLE, "2")),
-    Card(Number(Colour.RED, "1"), Number(Colour.PINK, "3")),
-    Card(Number(Colour.RED, "2"), DrawFive(Colour.PURPLE)),
-    Card(Number(Colour.RED, "2"), Reverse(Colour.ORANGE)),
-    Card(Number(Colour.RED, "3"), Number(Colour.PINK, "7")),
-    Card(Number(Colour.RED, "3"), WildDrawColour()),
-    Card(Number(Colour.RED, "4"), DrawFive(Colour.PURPLE)),
-    Card(Number(Colour.RED, "4"), Flip(Colour.ORANGE)),
-    Card(Number(Colour.RED, "5"), Number(Colour.PINK, "2")),
-    Card(Number(Colour.RED, "5"), Number(Colour.TURQUOISE, "5")),
-    Card(Number(Colour.RED, "6"), Number(Colour.ORANGE, "9")),
-    Card(Number(Colour.RED, "6"), SkipEveryone(Colour.PINK)),
-    Card(Number(Colour.RED, "7"), Number(Colour.ORANGE, "1")),
-    Card(Number(Colour.RED, "7"), Number(Colour.PURPLE, "5")),
-    Card(Number(Colour.RED, "8"), Number(Colour.TURQUOISE, "7")),
-    Card(Number(Colour.RED, "8"), Reverse(Colour.PURPLE)),
-    Card(Number(Colour.RED, "9"), Number(Colour.PURPLE, "5")),
-    Card(Number(Colour.RED, "9"), Reverse(Colour.TURQUOISE)),
+    Card(Number(Colours.RED, "1"), Number(Colours.PURPLE, "2")),
+    Card(Number(Colours.RED, "1"), Number(Colours.PINK, "3")),
+    Card(Number(Colours.RED, "2"), DrawFive(Colours.PURPLE)),
+    Card(Number(Colours.RED, "2"), Reverse(Colours.ORANGE)),
+    Card(Number(Colours.RED, "3"), Number(Colours.PINK, "7")),
+    Card(Number(Colours.RED, "3"), WildDrawColour()),
+    Card(Number(Colours.RED, "4"), DrawFive(Colours.PURPLE)),
+    Card(Number(Colours.RED, "4"), Flip(Colours.ORANGE)),
+    Card(Number(Colours.RED, "5"), Number(Colours.PINK, "2")),
+    Card(Number(Colours.RED, "5"), Number(Colours.TURQUOISE, "5")),
+    Card(Number(Colours.RED, "6"), Number(Colours.ORANGE, "9")),
+    Card(Number(Colours.RED, "6"), SkipEveryone(Colours.PINK)),
+    Card(Number(Colours.RED, "7"), Number(Colours.ORANGE, "1")),
+    Card(Number(Colours.RED, "7"), Number(Colours.PURPLE, "5")),
+    Card(Number(Colours.RED, "8"), Number(Colours.TURQUOISE, "7")),
+    Card(Number(Colours.RED, "8"), Reverse(Colours.PURPLE)),
+    Card(Number(Colours.RED, "9"), Number(Colours.PURPLE, "5")),
+    Card(Number(Colours.RED, "9"), Reverse(Colours.TURQUOISE)),
 
-    Card(Number(Colour.BLUE, "1"), SkipEveryone(Colour.PURPLE)),
-    Card(Number(Colour.BLUE, "1"), SkipEveryone(Colour.PURPLE)),
-    Card(Number(Colour.BLUE, "2"), Number(Colour.ORANGE, "8")),
-    Card(Number(Colour.BLUE, "2"), Number(Colour.PINK, "6")),
-    Card(Number(Colour.BLUE, "3"), Number(Colour.TURQUOISE, "2")),
-    Card(Number(Colour.BLUE, "3"), Number(Colour.PURPLE, "8")),
-    Card(Number(Colour.BLUE, "4"), DrawFive(Colour.TURQUOISE)),
-    Card(Number(Colour.BLUE, "4"), Number(Colour.PURPLE, "1")),
-    Card(Number(Colour.BLUE, "5"), Number(Colour.PINK, "9")),
-    Card(Number(Colour.BLUE, "5"), Reverse(Colour.ORANGE)),
-    Card(Number(Colour.BLUE, "6"), Reverse(Colour.PURPLE)),
-    Card(Number(Colour.BLUE, "6"), SkipEveryone(Colour.TURQUOISE)),
-    Card(Number(Colour.BLUE, "7"), Number(Colour.ORANGE, "3")),
-    Card(Number(Colour.BLUE, "7"), SkipEveryone(Colour.ORANGE)),
-    Card(Number(Colour.BLUE, "8"), Number(Colour.TURQUOISE, "4")),
-    Card(Number(Colour.BLUE, "8"), Reverse(Colour.TURQUOISE)),
-    Card(Number(Colour.BLUE, "9"), Number(Colour.ORANGE, "5")),
-    Card(Number(Colour.BLUE, "9"), Flip(Colour.PURPLE)),
+    Card(Number(Colours.BLUE, "1"), SkipEveryone(Colours.PURPLE)),
+    Card(Number(Colours.BLUE, "1"), SkipEveryone(Colours.PURPLE)),
+    Card(Number(Colours.BLUE, "2"), Number(Colours.ORANGE, "8")),
+    Card(Number(Colours.BLUE, "2"), Number(Colours.PINK, "6")),
+    Card(Number(Colours.BLUE, "3"), Number(Colours.TURQUOISE, "2")),
+    Card(Number(Colours.BLUE, "3"), Number(Colours.PURPLE, "8")),
+    Card(Number(Colours.BLUE, "4"), DrawFive(Colours.TURQUOISE)),
+    Card(Number(Colours.BLUE, "4"), Number(Colours.PURPLE, "1")),
+    Card(Number(Colours.BLUE, "5"), Number(Colours.PINK, "9")),
+    Card(Number(Colours.BLUE, "5"), Reverse(Colours.ORANGE)),
+    Card(Number(Colours.BLUE, "6"), Reverse(Colours.PURPLE)),
+    Card(Number(Colours.BLUE, "6"), SkipEveryone(Colours.TURQUOISE)),
+    Card(Number(Colours.BLUE, "7"), Number(Colours.ORANGE, "3")),
+    Card(Number(Colours.BLUE, "7"), SkipEveryone(Colours.ORANGE)),
+    Card(Number(Colours.BLUE, "8"), Number(Colours.TURQUOISE, "4")),
+    Card(Number(Colours.BLUE, "8"), Reverse(Colours.TURQUOISE)),
+    Card(Number(Colours.BLUE, "9"), Number(Colours.ORANGE, "5")),
+    Card(Number(Colours.BLUE, "9"), Flip(Colours.PURPLE)),
 
-    Card(Number(Colour.GREEN, "1"), Number(Colour.ORANGE, "5")),
-    Card(Number(Colour.GREEN, "1"), Flip(Colour.ORANGE)),
-    Card(Number(Colour.GREEN, "2"), SkipEveryone(Colour.TURQUOISE)),
-    Card(Number(Colour.GREEN, "2"), DrawFive(Colour.TURQUOISE)),
-    Card(Number(Colour.GREEN, "3"), Number(Colour.PURPLE, "2")),
-    Card(Number(Colour.GREEN, "3"), Flip(Colour.PINK)),
-    Card(Number(Colour.GREEN, "4"), Number(Colour.TURQUOISE, "9")),
-    Card(Number(Colour.GREEN, "4"), Number(Colour.PINK, "8")),
-    Card(Number(Colour.GREEN, "5"), Number(Colour.TURQUOISE, "4")),
-    Card(Number(Colour.GREEN, "5"), Number(Colour.ORANGE, "7")),
-    Card(Number(Colour.GREEN, "6"), Number(Colour.PINK, "5")),
-    Card(Number(Colour.GREEN, "6"), WildDrawColour()),
-    Card(Number(Colour.GREEN, "7"), Number(Colour.TURQUOISE, "2")),
-    Card(Number(Colour.GREEN, "7"), Number(Colour.ORANGE, "6")),
-    Card(Number(Colour.GREEN, "8"), Number(Colour.TURQUOISE, "9")),
-    Card(Number(Colour.GREEN, "8"), Reverse(Colour.PINK)),
-    Card(Number(Colour.GREEN, "9"), DrawFive(Colour.PINK)),
-    Card(Number(Colour.GREEN, "9"), Reverse(Colour.ORANGE)),
+    Card(Number(Colours.GREEN, "1"), Number(Colours.ORANGE, "5")),
+    Card(Number(Colours.GREEN, "1"), Flip(Colours.ORANGE)),
+    Card(Number(Colours.GREEN, "2"), SkipEveryone(Colours.TURQUOISE)),
+    Card(Number(Colours.GREEN, "2"), DrawFive(Colours.TURQUOISE)),
+    Card(Number(Colours.GREEN, "3"), Number(Colours.PURPLE, "2")),
+    Card(Number(Colours.GREEN, "3"), Flip(Colours.PINK)),
+    Card(Number(Colours.GREEN, "4"), Number(Colours.TURQUOISE, "9")),
+    Card(Number(Colours.GREEN, "4"), Number(Colours.PINK, "8")),
+    Card(Number(Colours.GREEN, "5"), Number(Colours.TURQUOISE, "4")),
+    Card(Number(Colours.GREEN, "5"), Number(Colours.ORANGE, "7")),
+    Card(Number(Colours.GREEN, "6"), Number(Colours.PINK, "5")),
+    Card(Number(Colours.GREEN, "6"), WildDrawColour()),
+    Card(Number(Colours.GREEN, "7"), Number(Colours.TURQUOISE, "2")),
+    Card(Number(Colours.GREEN, "7"), Number(Colours.ORANGE, "6")),
+    Card(Number(Colours.GREEN, "8"), Number(Colours.TURQUOISE, "9")),
+    Card(Number(Colours.GREEN, "8"), Reverse(Colours.PINK)),
+    Card(Number(Colours.GREEN, "9"), DrawFive(Colours.PINK)),
+    Card(Number(Colours.GREEN, "9"), Reverse(Colours.ORANGE)),
 
-    Card(DrawOne(Colour.YELLOW), Number(Colour.PINK, "1")),
-    Card(DrawOne(Colour.YELLOW), Number(Colour.PURPLE, "8")),
-    Card(DrawOne(Colour.RED), Number(Colour.PINK, "3")),
-    Card(DrawOne(Colour.RED), Number(Colour.PINK, "4")),
-    Card(DrawOne(Colour.BLUE), Number(Colour.PINK, "6")),
-    Card(DrawOne(Colour.BLUE), Number(Colour.TURQUOISE, "6")),
-    Card(DrawOne(Colour.GREEN), Number(Colour.ORANGE, "6")),
-    Card(DrawOne(Colour.GREEN), Number(Colour.TURQUOISE, "6")),
+    Card(DrawOne(Colours.YELLOW), Number(Colours.PINK, "1")),
+    Card(DrawOne(Colours.YELLOW), Number(Colours.PURPLE, "8")),
+    Card(DrawOne(Colours.RED), Number(Colours.PINK, "3")),
+    Card(DrawOne(Colours.RED), Number(Colours.PINK, "4")),
+    Card(DrawOne(Colours.BLUE), Number(Colours.PINK, "6")),
+    Card(DrawOne(Colours.BLUE), Number(Colours.TURQUOISE, "6")),
+    Card(DrawOne(Colours.GREEN), Number(Colours.ORANGE, "6")),
+    Card(DrawOne(Colours.GREEN), Number(Colours.TURQUOISE, "6")),
 
-    Card(Reverse(Colour.YELLOW), Flip(Colour.TURQUOISE)),
-    Card(Reverse(Colour.YELLOW), Wild()),
-    Card(Reverse(Colour.RED), Number(Colour.PURPLE, "3")),
-    Card(Reverse(Colour.RED), Number(Colour.TURQUOISE, "7")),
-    Card(Reverse(Colour.BLUE), Number(Colour.ORANGE, "4")),
-    Card(Reverse(Colour.BLUE), Wild()),
-    Card(Reverse(Colour.GREEN), Number(Colour.ORANGE, "1")),
-    Card(Reverse(Colour.GREEN), Number(Colour.PINK, "7")),
+    Card(Reverse(Colours.YELLOW), Flip(Colours.TURQUOISE)),
+    Card(Reverse(Colours.YELLOW), Wild()),
+    Card(Reverse(Colours.RED), Number(Colours.PURPLE, "3")),
+    Card(Reverse(Colours.RED), Number(Colours.TURQUOISE, "7")),
+    Card(Reverse(Colours.BLUE), Number(Colours.ORANGE, "4")),
+    Card(Reverse(Colours.BLUE), Wild()),
+    Card(Reverse(Colours.GREEN), Number(Colours.ORANGE, "1")),
+    Card(Reverse(Colours.GREEN), Number(Colours.PINK, "7")),
 
-    Card(Flip(Colour.YELLOW), Number(Colour.PINK, "4")),
-    Card(Flip(Colour.YELLOW), Number(Colour.ORANGE, "8")),
-    Card(Flip(Colour.RED), Number(Colour.PURPLE, "3")),
-    Card(Flip(Colour.RED), Number(Colour.PINK, "8")),
-    Card(Flip(Colour.BLUE), Number(Colour.PURPLE, "6")),
-    Card(Flip(Colour.BLUE), Number(Colour.PURPLE, "7")),
-    Card(Flip(Colour.GREEN), Number(Colour.TURQUOISE, "3")),
-    Card(Flip(Colour.GREEN), WildDrawColour()),
+    Card(Flip(Colours.YELLOW), Number(Colours.PINK, "4")),
+    Card(Flip(Colours.YELLOW), Number(Colours.ORANGE, "8")),
+    Card(Flip(Colours.RED), Number(Colours.PURPLE, "3")),
+    Card(Flip(Colours.RED), Number(Colours.PINK, "8")),
+    Card(Flip(Colours.BLUE), Number(Colours.PURPLE, "6")),
+    Card(Flip(Colours.BLUE), Number(Colours.PURPLE, "7")),
+    Card(Flip(Colours.GREEN), Number(Colours.TURQUOISE, "3")),
+    Card(Flip(Colours.GREEN), WildDrawColour()),
 
-    Card(Skip(Colour.YELLOW), Number(Colour.ORANGE, "3")),
-    Card(Skip(Colour.YELLOW), Flip(Colour.TURQUOISE)),
-    Card(Skip(Colour.RED), DrawFive(Colour.ORANGE)),
-    Card(Skip(Colour.RED), Wild()),
-    Card(Skip(Colour.BLUE), Number(Colour.TURQUOISE, "1")),
-    Card(Skip(Colour.BLUE), Number(Colour.PINK, "9")),
-    Card(Skip(Colour.GREEN), Number(Colour.PURPLE, "4")),
-    Card(Skip(Colour.GREEN), Number(Colour.ORANGE, "9")),
+    Card(Skip(Colours.YELLOW), Number(Colours.ORANGE, "3")),
+    Card(Skip(Colours.YELLOW), Flip(Colours.TURQUOISE)),
+    Card(Skip(Colours.RED), DrawFive(Colours.ORANGE)),
+    Card(Skip(Colours.RED), Wild()),
+    Card(Skip(Colours.BLUE), Number(Colours.TURQUOISE, "1")),
+    Card(Skip(Colours.BLUE), Number(Colours.PINK, "9")),
+    Card(Skip(Colours.GREEN), Number(Colours.PURPLE, "4")),
+    Card(Skip(Colours.GREEN), Number(Colours.ORANGE, "9")),
 
-    Card(Wild(), Number(Colour.TURQUOISE, "3")),
-    Card(Wild(), Number(Colour.PINK, "5")),
-    Card(Wild(), Number(Colour.PURPLE, "7")),
-    Card(Wild(), Flip(Colour.PINK)),
+    Card(Wild(), Number(Colours.TURQUOISE, "3")),
+    Card(Wild(), Number(Colours.PINK, "5")),
+    Card(Wild(), Number(Colours.PURPLE, "7")),
+    Card(Wild(), Flip(Colours.PINK)),
 
-    Card(WildDrawTwo(), Number(Colour.PINK, "2")),
-    Card(WildDrawTwo(), Number(Colour.ORANGE, "4")),
-    Card(WildDrawTwo(), Number(Colour.ORANGE, "7")),
-    Card(WildDrawTwo(), Number(Colour.PURPLE, "9")),
+    Card(WildDrawTwo(), Number(Colours.PINK, "2")),
+    Card(WildDrawTwo(), Number(Colours.ORANGE, "4")),
+    Card(WildDrawTwo(), Number(Colours.ORANGE, "7")),
+    Card(WildDrawTwo(), Number(Colours.PURPLE, "9")),
 ]
