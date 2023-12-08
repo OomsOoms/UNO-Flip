@@ -94,6 +94,9 @@ class Card:
         discard_pile = self.deck.discard_pile
         if discard_pile:
             discard = discard_pile[-1]
+            # if the discard is a wild card
+            if not discard.colour:
+                return True
             return (self.colour == discard.colour or self.action == discard.action) or not self.colour
 
     def behaviour(self, game):
