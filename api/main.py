@@ -80,17 +80,18 @@ async def lobby(websocket: WebSocket, game_id: int, player_id: str):
         while True:
             message = await websocket.receive_json()
 
-            if message["type"] == "play_card":
-                if game_object.play_card(player_id, int(message["index"]), message["wildColour"]):
-                    await manager.broadcast_gamestate(game_object)
+            if game_object.state == GameState.GAME:
+                if message["type"] == "play_card":
+                    if game_object.play_card(player_id, int(message["index"]), message["wildColour"]):
+                        await manager.broadcast_gamestate(game_object)
 
-            elif message["type"] == "pick_card":
-                if game_object.pick_card(player_id):
-                    await manager.broadcast_gamestate(game_object)
+                elif message["type"] == "pick_card":
+                    if game_object.pick_card(player_id):
+                        await manager.broadcast_gamestate(game_object)
 
-            elif message["type"] == "call_uno":
-                if game_object.call_uno(player_id):
-                    await manager.broadcast_gamestate(game_object)
+                elif message["type"] == "call_uno":
+                    if game_object.call_uno(player_id):
+                        await manager.broadcast_gamestate(game_object)
 
     # Only runs when an authenticated websocket disconnects
     except WebSocketDisconnect:

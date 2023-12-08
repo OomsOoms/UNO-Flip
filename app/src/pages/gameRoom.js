@@ -25,7 +25,7 @@ export default function GameRoom() {
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       // These messages change the state of the component
-      if (data.type === "game" || data.type === "lobby" || data.type === "game_over") {
+      if (data.type === "game" || data.type === "lobby" || data.type === "gameOver") {
         data.ws = ws;
         setLobbyData(data);
       // These messages do not change the state of the component
@@ -53,8 +53,8 @@ export default function GameRoom() {
       return <Lobby lobbyData={lobbyData} />;
     case "game":
       return <Game lobbyData={lobbyData} />;
-    case "game_over":
-      return <p>Game Over</p>;
+    case "gameOver":
+      return <GameOver lobbyData={lobbyData} />;
     default:
       return <p>Loading...</p>;
   }
@@ -117,8 +117,6 @@ function Game({ lobbyData: { discard, playerHand, isTurn, unoCalled, ws } }) {
     }));
   };
 
-
-  
   return (
     <div id="gameContainer">
       <div id="discardContainer">
@@ -156,14 +154,35 @@ function Game({ lobbyData: { discard, playerHand, isTurn, unoCalled, ws } }) {
   );
 }
 
-function Card({ index, card: { colour, action, isPlayable }, ws }) {
-  
+function Card({ index, card: { colour, action, isPlayable }, ws, wildColours }) {
+
+  const selectColour = (wildColours) => {
+    return new Promise((resolve) => {
+      const input = prompt("Enter a value:");
+      resolve(input);
+    });
+  };
+
   const selectCard = () => {
-    ws.send(JSON.stringify({
-      type: "play_card",
-      index: index,
-      wildColour: "red", // TODO: implement wildColour selection
-    }));
+    if (colour === null) {
+      // Run code to get input
+      const input = selectColour(wildColours);
+
+      // Send ws json once input is obtained
+      input.then((selectedColour) => {
+        ws.send(JSON.stringify({
+          type: "play_card",
+          index: index,
+          wildColour: selectedColour,
+        }));
+      });
+    } else {
+      ws.send(JSON.stringify({
+        type: "play_card",
+        index: index,
+        wildColour: null,
+      }));
+    }
   }
 
   return (
@@ -174,5 +193,13 @@ function Card({ index, card: { colour, action, isPlayable }, ws }) {
     >
       {action}
     </button>
+  );
+}
+
+function GameOver({ lobbyData }) {
+  return (
+    <div id="gameOverContainer">
+      <h1>Game Over</h1>
+    </div>
   );
 }

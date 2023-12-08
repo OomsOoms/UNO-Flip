@@ -208,13 +208,13 @@ class Game:
         player_object = self.players.players.get(player_id)
         card = player_object.hand[card_index]
 
-        if wild_colour:
-            if wild_colour in Colour.LIGHT if self.deck.flip == 0 else Colour.DARK:
-                card.colour = wild_colour
-            else:
-                return
-
         if card.is_playable() and player_id == self.players.current_player_id:
+            if not card.colour:
+                if wild_colour in Colour.LIGHT if self.deck.flip == 0 else Colour.DARK:
+                    card.colour = wild_colour
+                else:
+                    return
+
             logger.debug(
                 f"Playing card {card_index} for player {player_id} in game {self.game_id}")
 

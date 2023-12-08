@@ -221,8 +221,7 @@ class Wild(Side):
 
     def behaviour(self, game):
         logger.debug(f"Behaviour of {self.action} running")
-        # TODO
-
+        
 
 class WildDrawTwo(Side):
 
@@ -233,7 +232,11 @@ class WildDrawTwo(Side):
 
     def behaviour(self, game):
         logger.debug(f"Behaviour of {self.action} running")
-        # TODO
+        
+        for _ in range(2):
+            player_hand = game.players.current_player.hand
+            player_hand.append(game.deck.pick_card())
+        game.players.increment_turn()
 
 
 class WildDrawColour(Side):
@@ -245,10 +248,18 @@ class WildDrawColour(Side):
 
     def behaviour(self, game):
         logger.debug(f"Behaviour of {self.action} running")
-        # TODO
+
+        player_hand = game.players.current_player.hand
+        
+        while True:
+            card = game.deck.pick_card()
+            player_hand.append(card)
+            if card.colour == game.deck.discard_pile[-1].colour:
+                break
+            
+        game.players.increment_turn()
 
 
-# TODO: Add the actual cards
 cards = [
     Card(Number(Colour.YELLOW, "1"), SkipEveryone(Colour.PINK)),
     Card(Number(Colour.YELLOW, "1"), Wild()),
