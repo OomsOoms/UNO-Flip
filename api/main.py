@@ -5,16 +5,17 @@ It provides functionality for creating and joining games, starting games, playin
 and managing websocket connections.
 """
 
+from typing import Union  # Used when a function can return multiple types
+import asyncio
+
 from fastapi import FastAPI, HTTPException, status, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from typing import Union  # Used when a function can return multiple types
 
 from game_logic.game import Game, GameState
 from utils.request_model import *
 from utils.connection_manager import ConectionManager
 from utils.custom_logger import CustomLogger
-import asyncio
 
 # Run with logging:
 # uvicorn main:app --reload --host 0.0.0.0
@@ -70,7 +71,7 @@ async def lobby(websocket: WebSocket, game_id: int, player_id: str):
     """
     game_object = games.get(game_id)
 
-    if game_object and (player_id in game_object.players.players):
+    if game_object and game_object.players[player_id]:
         await manager.connect(websocket, game_id, player_id)
         await websocket.send_json(game_object.get_game_state(player_id))
     else:
@@ -99,9 +100,9 @@ async def lobby(websocket: WebSocket, game_id: int, player_id: str):
         # Wait 5 seconds to see if the player reconnects
         await asyncio.sleep(5)
         if [game_id, player_id] not in list(manager.active_connections.values()):
-            if game_object.players.players.get(player_id):
+            if game_object.players[player_id]:
                 game_object.players.remove_player(player_id)
-                if not len(game_object.players.players):
+                if not len(game_object.players):
                     logger.debug(
                         f"Deleting game {game_id} because thre are no players left")
                     del games[game_id]
@@ -150,7 +151,7 @@ async def join_game(join_id_request: JoinGameRequest) -> Union[dict, None]:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,
                             detail="Game has already started")
 
-    if len(game_object.players.players) >= 10:
+    if len(game_object.players) >= 10:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Game is full")
 
@@ -174,17 +175,12 @@ async def start_game(start_game_request: StartGameRequest) -> Union[bool, None]:
     """
     game_object = games.get(start_game_request.game_id)
 
-    if game_object.state != GameState.LOBBY or list(game_object.players.players.keys())[0] != start_game_request.player_id:
+    if game_object.start_game(start_game_request.player_id):
+        await manager.broadcast_gamestate(game_object)
+        return JSONResponse(content={"detail": "Game started", "started": True}, status_code=status.HTTP_200_OK)
+    else:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail="Invalid request to start the game")
-
-    elif len(game_object.players.players) < 2:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                            detail="Not enough players to start the game")
-
-    game_object.start_game()
-    await manager.broadcast_gamestate(game_object)
-    return JSONResponse(content={"detail": "Game started", "started": True}, status_code=status.HTTP_200_OK)
 
 
 @app.get("/admin_stats")
@@ -193,7 +189,7 @@ async def admin_stats():
     game_stats = []
     for game_id, game_object in games.items():
         players = {player_id: player_object.name for player_id,
-                   player_object in game_object.players.players.items()}
+                   player_object in game_object.players.items()}
         game_stats.append({
             "gameId": game_id,
             "players": players,
@@ -206,7 +202,7 @@ async def admin_stats():
             "gameDirection": game_object.direction,
             "gameFlip": game_object.deck.flip,
             "gameStarted": str(game_object.state.value),
-            "playerScores": (player_object.score for player_id, player_object in game_object.players.players.items())
+            "playerScores": (player_object.score for player_id, player_object in game_object.players.items())
         })
 
     websocket_stats = {}

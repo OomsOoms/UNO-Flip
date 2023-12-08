@@ -28,7 +28,7 @@ export default function GameRoom() {
       if (data.type === "game" || data.type === "lobby" || data.type === "gameOver") {
         data.ws = ws;
         setLobbyData(data);
-      // These messages do not change the state of the component
+        // These messages do not change the state of the component
       } else if (data.type === "call_uno") {
         console.log(`${data.playerName} called UNO!`);
       }
@@ -40,12 +40,11 @@ export default function GameRoom() {
         window.location.href = "/";
       }
       return;
-    }
+    };
     return () => {
       console.log("component unmounted");
       ws.close();
     };
-
   }, [gameId, playerId]);
 
   switch (lobbyData.type) {
@@ -61,7 +60,6 @@ export default function GameRoom() {
 }
 
 const Lobby = ({ lobbyData: { playerNames, isHost, gameId, playerId } }) => {
-
   const startGame = () => {
     const requestbody = {
       game_id: gameId,
@@ -101,61 +99,47 @@ const Lobby = ({ lobbyData: { playerNames, isHost, gameId, playerId } }) => {
       </div>
     </>
   );
-}
+};
 
 function Game({ lobbyData: { discard, playerHand, isTurn, unoCalled, ws } }) {
-
   const pickCard = () => {
-    ws.send(JSON.stringify({
-      type: "pick_card",
-    }));
+    ws.send(
+      JSON.stringify({
+        type: "pick_card",
+      })
+    );
   };
 
   const callUno = () => {
-    ws.send(JSON.stringify({
-      type: "call_uno",
-    }));
+    ws.send(
+      JSON.stringify({
+        type: "call_uno",
+      })
+    );
   };
 
   return (
     <div id="gameContainer">
       <div id="discardContainer">
-        <div
-          style={{ backgroundColor: discard.colour }}
-          className="card"
-        >
+        <div style={{ backgroundColor: discard.colour }} className="card">
           {discard.action}
         </div>
-        <button
-          id="callUnoButton"
-          onClick={callUno}
-          className={`${unoCalled ? "disabled" : ""}`}
-        >
+        <button id="callUnoButton" onClick={callUno} className={`${unoCalled ? "disabled" : ""}`}>
           Call UNO!
         </button>
-        <button
-          id="pickCardButton"
-          onClick={pickCard}
-          className={`${isTurn ? "" : "disabled"}`}
-        >
+        <button id="pickCardButton" onClick={pickCard} className={`${isTurn ? "" : "disabled"}`}>
           Pick up card
         </button>
       </div>
-      
+
       {playerHand.map((card, index) => (
-        <Card 
-          key={`${card.colour}-${card.action}-${index}`} 
-          index={index}
-          card={card}
-          ws={ws}
-        />
+        <Card key={`${card.colour}-${card.action}-${index}`} index={index} card={card} ws={ws} />
       ))}
     </div>
   );
 }
 
 function Card({ index, card: { colour, action, isPlayable }, ws, wildColours }) {
-
   const selectColour = (wildColours) => {
     return new Promise((resolve) => {
       const input = prompt("Enter a value:");
@@ -170,36 +154,37 @@ function Card({ index, card: { colour, action, isPlayable }, ws, wildColours }) 
 
       // Send ws json once input is obtained
       input.then((selectedColour) => {
-        ws.send(JSON.stringify({
-          type: "play_card",
-          index: index,
-          wildColour: selectedColour,
-        }));
+        ws.send(
+          JSON.stringify({
+            type: "play_card",
+            index: index,
+            wildColour: selectedColour,
+          })
+        );
       });
     } else {
-      ws.send(JSON.stringify({
-        type: "play_card",
-        index: index,
-        wildColour: null,
-      }));
+      ws.send(
+        JSON.stringify({
+          type: "play_card",
+          index: index,
+          wildColour: null,
+        })
+      );
     }
-  }
+  };
 
   return (
-    <button
-      style={{ backgroundColor: colour }}
-      className={`card playable ${isPlayable ? "" : "disabled"}`}
-      onClick={selectCard}
-    >
+    <button style={{ backgroundColor: colour }} className={`card playable ${isPlayable ? "" : "disabled"}`} onClick={selectCard}>
       {action}
     </button>
   );
 }
 
-function GameOver({ lobbyData }) {
+function GameOver({ lobbyData: { score } }) {
   return (
     <div id="gameOverContainer">
       <h1>Game Over</h1>
+      <p>Score: {score}</p>
     </div>
   );
 }

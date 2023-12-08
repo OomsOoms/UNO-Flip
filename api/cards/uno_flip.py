@@ -15,15 +15,12 @@ class Colour(Enum):
     PURPLE = "purple"
     TURQUOISE = "turquoise"
 
-    @classmethod
-    @property
-    def LIGHT(cls):
-        return [cls.YELLOW.value, cls.RED.value, cls.BLUE.value, cls.GREEN.value]
-    
-    @classmethod
-    @property
-    def DARK(cls):
-        return [cls.ORANGE.value, cls.PINK.value, cls.PURPLE.value, cls.TURQUOISE.value]
+    def colours(game_object) -> list:
+        # Game object is only used in the flip version of the game
+        if game_object.deck.flip == 0:
+            return [colour.value for colour in Colour][:4]
+        else:
+            return [colour.value for colour in Colour][4:]
 
 
 class Side:
@@ -77,7 +74,7 @@ class Card:
     @property
     def colour(self):
         return self.light.colour if self.deck.flip == 0 else self.dark.colour
-    
+
     @colour.setter
     def colour(self, colour):
         if self.deck.flip == 0:
@@ -221,7 +218,7 @@ class Wild(Side):
 
     def behaviour(self, game):
         logger.debug(f"Behaviour of {self.action} running")
-        
+
 
 class WildDrawTwo(Side):
 
@@ -232,7 +229,7 @@ class WildDrawTwo(Side):
 
     def behaviour(self, game):
         logger.debug(f"Behaviour of {self.action} running")
-        
+
         for _ in range(2):
             player_hand = game.players.current_player.hand
             player_hand.append(game.deck.pick_card())
@@ -250,13 +247,13 @@ class WildDrawColour(Side):
         logger.debug(f"Behaviour of {self.action} running")
 
         player_hand = game.players.current_player.hand
-        
+
         while True:
             card = game.deck.pick_card()
             player_hand.append(card)
             if card.colour == game.deck.discard_pile[-1].colour:
                 break
-            
+
         game.players.increment_turn()
 
 

@@ -6,15 +6,12 @@ The Deck class manages the cards, deals hands, and handles discards for the spec
 
 from random import choice
 
-from cards.uno_flip import cards, Card
-
-
 class Deck:
     """Represents a deck of cards used in a game.
 
     Attributes:
         game (str): The name of the game this deck belongs to.
-        flip (int): Indicates the current side of the card: 0 for light side, 1 for dark side.
+        flip (int): Indicates the current side of the card: 0 for light side, 1 for dark side. only used in uno flip
         discard (list): A list to store discarded cards.
         cards (list): A list of cards in the deck.
 
@@ -25,7 +22,7 @@ class Deck:
         pick_card(): Picks a card from the deck, reshuffling if necessary.
     """
 
-    def __init__(self, game) -> None:
+    def __init__(self, game, cards) -> None:
         """Initialize the Deck.
 
         Args:
@@ -50,7 +47,7 @@ class Deck:
         hand = [self.pick_card() for _ in range(7)]
         return hand
 
-    def place_card(self, card: Card) -> None:
+    def place_card(self, card) -> None:
         """Place a card onto the discard pile.
 
         Args:
@@ -59,11 +56,11 @@ class Deck:
         self.discard_pile.append(card)
         card.behaviour()
 
-    def pick_card(self) -> Card:
+    def pick_card(self):
         """Pick a card from the deck, reshuffling if necessary.
 
         Returns:
-            Card: The card picked from the deck.
+            Card: The card picked from the deck as an object.
         """
         # Check if the deck is empty
         if not self.cards:
