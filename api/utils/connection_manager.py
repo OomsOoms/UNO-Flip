@@ -61,13 +61,13 @@ class ConectionManager:
         logger.debug(
             f"Removed websocket {websocket.client} from active connections")
 
-    async def broadcast_gamestate(self, game_object: Game):
+    async def broadcast_gamestate(self, game: Game):
         """Method to broadcast the game state to all websockets in a game.
 
         Args:
-            game_object (Game): The game object to broadcast
+            game (Game): The game object to broadcast
         """
-        logger.debug(f"Broadcasting gamestate for game {game_object.game_id}")
+        logger.debug(f"Broadcasting gamestate for game {game.game_id}")
         for connection, [conn_game_id, conn_player_id] in self.active_connections.items():
-            if conn_game_id == game_object.game_id:
-                await connection.send_json(game_object.get_game_state(conn_player_id))
+            if conn_game_id == game.game_id:
+                await connection.send_json(game.get_game_state(conn_player_id))

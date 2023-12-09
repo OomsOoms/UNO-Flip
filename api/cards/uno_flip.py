@@ -15,9 +15,9 @@ class Colours(Enum):
     PURPLE = "purple"
     TURQUOISE = "turquoise"
 
-    def colours(game_object) -> list:
+    def colours(game) -> list:
         # Game object is only used in the flip version of the game
-        if game_object.deck.flip == 0:
+        if game.deck.flip == 0:
             return [colour.value for colour in Colours][:4]
         else:
             return [colour.value for colour in Colours][4:]
@@ -29,13 +29,11 @@ class Side:
     Attributes:
         colour (Colour): The colour of the card.
         action (str): The action text of the card.
-        card_type (type): The type of the card. This is the class of the card.
     """
 
-    def __init__(self, colour: Colours, action: str, card_type):
+    def __init__(self, colour: Colours, action: str):
         self.colour = colour.value if colour else None
         self.action = action
-        self.card_type = card_type
 
 
 class Card:
@@ -54,7 +52,6 @@ class Card:
         score (int): The score of the card.
         action (str): The action text of the card.
         colour (Colour): The colour of the card.
-        card_type (type): The type of the card.
     """
 
     def __init__(self, light_side: Side, dark_side: Side):
@@ -82,14 +79,6 @@ class Card:
             self.dark.colour = colour
 
     @property
-    def face_value(self):
-        return {"action": self.action, "colour": self.colour}
-
-    @property
-    def card_type(self):
-        return self.light.card_type if self.deck.flip == 0 else self.dark.card_type
-    
-    @property
     def __class__(self):
         if self.deck.flip == 0:
             return self.light.__class__
@@ -109,9 +98,6 @@ class Card:
         self.light.behaviour(
             game) if self.deck.flip == 0 else self.dark.behaviour(game)
 
-    def __str__(self):
-        return f"{self.colour.name} {self.action} {self.card_type.__name__}"
-
 
 class Number(Side):
     """A number side of a card.
@@ -119,12 +105,11 @@ class Number(Side):
     Attributes:
         colour (Colour): The colour of the card.
         action (str): The action text of the card.
-        card_type (type): The type of the card.
         score (int): The score of the card.
     """
 
     def __init__(self, colour: Colours, action: str):
-        super().__init__(colour, action, self.__class__)
+        super().__init__(colour, action)
         self.score = int(action)
 
     def behaviour(self, game):
@@ -136,7 +121,7 @@ class Flip(Side):
     score = 20
 
     def __init__(self, colour: Colours):
-        super().__init__(colour, self.__class__.__name__, self.__class__)
+        super().__init__(colour, self.__class__.__name__)
 
     def behaviour(self, game):
         logger.debug(f"Behaviour of {self.action} running")
@@ -151,7 +136,7 @@ class Skip(Side):
     score = 20
 
     def __init__(self, colour: Colours):
-        super().__init__(colour, self.__class__.__name__, self.__class__)
+        super().__init__(colour, self.__class__.__name__)
 
     def behaviour(self, game):
         logger.debug(f"Behaviour of {self.action} running")
@@ -163,7 +148,7 @@ class SkipEveryone(Side):
     score = 30
 
     def __init__(self, colour: Colours):
-        super().__init__(colour, self.__class__.__name__, self.__class__)
+        super().__init__(colour, self.__class__.__name__)
 
     def behaviour(self, game):
         logger.debug(f"Behaviour of {self.action} running")
@@ -178,7 +163,7 @@ class Reverse(Side):
     score = 20
 
     def __init__(self, colour: Colours):
-        super().__init__(colour, self.__class__.__name__, self.__class__)
+        super().__init__(colour, self.__class__.__name__)
 
     def behaviour(self, game):
         logger.debug(f"Behaviour of {self.action} running")
@@ -192,7 +177,7 @@ class DrawOne(Side):
     score = 10
 
     def __init__(self, colour: Colours):
-        super().__init__(colour, self.__class__.__name__, self.__class__)
+        super().__init__(colour, self.__class__.__name__)
 
     def behaviour(self, game):
         logger.debug(f"Behaviour of {self.action} running")
@@ -206,7 +191,7 @@ class DrawFive(Side):
     score = 20
 
     def __init__(self, colour: Colours):
-        super().__init__(colour, self.__class__.__name__, self.__class__)
+        super().__init__(colour, self.__class__.__name__)
 
     def behaviour(self, game):
         logger.debug(f"Behaviour of {self.action} running")
@@ -221,7 +206,7 @@ class Wild(Side):
     score = 40
 
     def __init__(self):
-        super().__init__(None, self.__class__.__name__, self.__class__)
+        super().__init__(None, self.__class__.__name__)
 
     def behaviour(self, game):
         logger.debug(f"Behaviour of {self.action} running")
@@ -232,7 +217,7 @@ class WildDrawTwo(Side):
     score = 50
 
     def __init__(self):
-        super().__init__(None, self.__class__.__name__, self.__class__)
+        super().__init__(None, self.__class__.__name__)
 
     def behaviour(self, game):
         logger.debug(f"Behaviour of {self.action} running")
@@ -248,7 +233,7 @@ class WildDrawColour(Side):
     score = 60
 
     def __init__(self):
-        super().__init__(None, self.__class__.__name__, self.__class__)
+        super().__init__(None, self.__class__.__name__)
 
     def behaviour(self, game):
         logger.debug(f"Behaviour of {self.action} running")

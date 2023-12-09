@@ -11,26 +11,15 @@ class Colours(Enum):
     BLUE = "blue"
     GREEN = "green"
 
-    def colours(game_object) -> list:
+    def colours(game) -> list:
         return [colour.value for colour in Colours]
 
 
 class Card:
-    def __init__(self, colour: Colours, action: str, card_type):
-        self._colour = colour.value if colour else None
+    def __init__(self, colour: Colours, action: str):
+        self.colour = colour.value if colour else None
         self.action = action
-        self.card_type = card_type
         self.deck = None
-        self.face_value = {"action": self.action, "colour": self._colour}
-
-    @property
-    def colour(self):
-        return self._colour
-
-    @colour.setter
-    def colour(self, new_colour):
-        self._colour = new_colour
-        self.face_value["colour"] = new_colour  # Update face value if needed
 
     def is_playable(self):
         discard_pile = self.deck.discard_pile
@@ -48,12 +37,11 @@ class Number(Card):
     Attributes:
         colour (Colour): The colour of the card.
         action (str): The action text of the card.
-        card_type (type): The type of the card.
         score (int): The score of the card.
     """
 
     def __init__(self, colour: Colours, action: str):
-        super().__init__(colour, action, self.__class__)
+        super().__init__(colour, action)
         self.score = int(action)
 
     def behaviour(self, game):
@@ -65,7 +53,7 @@ class Skip(Card):
     score = 20
 
     def __init__(self, colour: Colours):
-        super().__init__(colour, self.__class__.__name__, self.__class__)
+        super().__init__(colour, self.__class__.__name__)
 
     def behaviour(self, game):
         logger.debug(f"Behaviour of {self.action} running")
@@ -77,7 +65,7 @@ class Reverse(Card):
     score = 20
 
     def __init__(self, colour: Colours):
-        super().__init__(colour, self.__class__.__name__, self.__class__)
+        super().__init__(colour, self.__class__.__name__)
 
     def behaviour(self, game):
         logger.debug(f"Behaviour of {self.action} running")
@@ -91,7 +79,7 @@ class DrawTwo(Card):
     score = 20
 
     def __init__(self, colour: Colours):
-        super().__init__(colour, self.__class__.__name__, self.__class__)
+        super().__init__(colour, self.__class__.__name__)
 
     def behaviour(self, game):
         logger.debug(f"Behaviour of {self.action} running")
@@ -107,7 +95,7 @@ class Wild(Card):
     score = 40
 
     def __init__(self):
-        super().__init__(None, self.__class__.__name__, self.__class__)
+        super().__init__(None, self.__class__.__name__)
 
     def behaviour(self, game):
         logger.debug(f"Behaviour of {self.action} running")
@@ -118,7 +106,7 @@ class WildDrawFour(Card):
     score = 50
 
     def __init__(self):
-        super().__init__(None, self.__class__.__name__, self.__class__)
+        super().__init__(None, self.__class__.__name__)
 
     def behaviour(self, game):
         logger.debug(f"Behaviour of {self.action} running")
@@ -127,6 +115,7 @@ class WildDrawFour(Card):
             player_hand = game.players.current_player.hand
             player_hand.append(game.deck.pick_card())
         game.players.increment_turn()
+
 
 cards = [
     Number(Colours.YELLOW, "1"),
@@ -148,7 +137,7 @@ cards = [
     Number(Colours.YELLOW, "9"),
     Number(Colours.YELLOW, "9"),
     Number(Colours.YELLOW, "0"),
-    
+
     Number(Colours.RED, "1"),
     Number(Colours.RED, "1"),
     Number(Colours.RED, "2"),
@@ -208,7 +197,7 @@ cards = [
     Number(Colours.GREEN, "9"),
     Number(Colours.GREEN, "9"),
     Number(Colours.GREEN, "0"),
-    
+
     DrawTwo(Colours.YELLOW),
     DrawTwo(Colours.YELLOW),
     DrawTwo(Colours.RED),
@@ -217,7 +206,7 @@ cards = [
     DrawTwo(Colours.BLUE),
     DrawTwo(Colours.GREEN),
     DrawTwo(Colours.GREEN),
-    
+
     Skip(Colours.YELLOW),
     Skip(Colours.YELLOW),
     Skip(Colours.RED),
@@ -226,7 +215,7 @@ cards = [
     Skip(Colours.BLUE),
     Skip(Colours.GREEN),
     Skip(Colours.GREEN),
-    
+
     Reverse(Colours.YELLOW),
     Reverse(Colours.YELLOW),
     Reverse(Colours.RED),

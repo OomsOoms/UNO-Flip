@@ -30,7 +30,7 @@ class Game:
         self.game_id = randint(100000, 999999)
         logger.info(f"Creating game {self.game_id}")
 
-        game_mode = game_modes["uno"]
+        game_mode = game_modes["uno_flip"]
         self.name = game_mode["name"]
         self.wild_colours = game_mode["wild_colours"]
 
@@ -72,8 +72,8 @@ class Game:
             card_index (int): The index of the card in the player's hand.
             wild_colour (str): The colour chosen for a wild card.
         """
-        player_object = self.players[player_id]
-        card = player_object.hand[card_index]
+        player = self.players[player_id]
+        card = player.hand[card_index]
 
         if card.is_playable() and player_id == self.players.current_player_id:
             # Check if the card is a wild card and set the colour
@@ -112,16 +112,16 @@ class Game:
         It checks for various conditions such as winning, updates player scores,
         and progresses the game state.
         """
-        player_object = self.players[self.players.current_player_id]
+        player = self.players[self.players.current_player_id]
 
         # Check if the current player has an empty hand/has won the game
-        if len(player_object.hand) == 0:
+        if len(player.hand) == 0:
             logger.info(f"Game won by {self.players.current_player_id}")
 
             # Update player scores based on remaining cards in hands
-            for player_id, player in self.players.items():
-                for card in player.hand:
-                    player_object.score += card.score
+            for player_id, opponent in self.players.items():
+                for card in opponent.hand:
+                    player.score += card.score
 
             self.state = GameState.GAME_OVER
             return
@@ -161,7 +161,11 @@ class Game:
             dict: A dict containing the game state for the player that requested it,
             this data changes depending one the game state.
         """
-        player_object = self.players[player_id]
+        discard = {
+            "colour": self.deck.discard_pile[-1].colour,
+            "action": self.deck.discard_pile[-1].action,
+        } if self.deck.discard_pile else None
+        player = self.players[player_id]
         player_names = [player.name for player in self.players.values()]
         player_hand = [
             {
@@ -169,13 +173,13 @@ class Game:
                 "action": card.action,
                 "isPlayable": card.is_playable() and player_id == self.players.current_player_id
             }
-            for card in player_object.hand
+            for card in player.hand
         ]
         return {
             "type": self.state.value,
             "name": self.name,
             "gameId": self.game_id,
-            "discard": self.deck.discard_pile[-1].face_value if self.deck.discard_pile else None,
+            "discard": discard,
             "currentPlayerName": self.players.current_player.name,
             "playerNames": player_names,
             "wildColours": self.wild_colours.colours(self),
@@ -185,5 +189,5 @@ class Game:
             "playerHand": player_hand,
             "isHost": list(self.players.keys())[0] == player_id,
             "isTurn": player_id == self.players.current_player_id,
-            "score": player_object.score,
+            "score": player.score,
         }

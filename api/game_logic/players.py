@@ -52,7 +52,7 @@ class Players:
     def remove_player(self, player_id: str) -> None:
         logger.info(f"Removing {player_id} from game {self.game.game_id}")
 
-        player_object = self.players.get(player_id)
+        player = self.players.get(player_id)
 
         if self.game.direction:
             if list(self.players.keys()).index(player_id) < self.current_player_index:
@@ -60,7 +60,7 @@ class Players:
             if self.current_player_index >= len(self.players)-1:
                 self.current_player_index = 0
 
-        self.game.deck.cards += player_object.hand
+        self.game.deck.cards += player.hand
         del self.players[player_id]
 
     def __getitem__(self, player_id):

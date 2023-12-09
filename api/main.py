@@ -69,11 +69,11 @@ async def lobby(websocket: WebSocket, game_id: int, player_id: str):
     Raises:
         WebSocketDisconnect: If the websocket connection is closed
     """
-    game_object = games.get(game_id)
+    game = games.get(game_id)
 
-    if game_object and game_object.players[player_id]:
+    if game and game.players[player_id]:
         await manager.connect(websocket, game_id, player_id)
-        await websocket.send_json(game_object.get_game_state(player_id))
+        await websocket.send_json(game.get_game_state(player_id))
     else:
         await websocket.close()
         return
@@ -81,18 +81,18 @@ async def lobby(websocket: WebSocket, game_id: int, player_id: str):
         while True:
             message = await websocket.receive_json()
 
-            if game_object.state == GameState.GAME:
+            if game.state == GameState.GAME:
                 if message["type"] == "play_card":
-                    if game_object.play_card(player_id, int(message["index"]), message["wildColour"]):
-                        await manager.broadcast_gamestate(game_object)
+                    if game.play_card(player_id, int(message["index"]), message["wildColour"]):
+                        await manager.broadcast_gamestate(game)
 
                 elif message["type"] == "pick_card":
-                    if game_object.pick_card(player_id):
-                        await manager.broadcast_gamestate(game_object)
+                    if game.pick_card(player_id):
+                        await manager.broadcast_gamestate(game)
 
                 elif message["type"] == "call_uno":
-                    if game_object.call_uno(player_id):
-                        await manager.broadcast_gamestate(game_object)
+                    if game.call_uno(player_id):
+                        await manager.broadcast_gamestate(game)
 
     # Only runs when an authenticated websocket disconnects
     except WebSocketDisconnect:
@@ -100,14 +100,14 @@ async def lobby(websocket: WebSocket, game_id: int, player_id: str):
         # Wait 5 seconds to see if the player reconnects
         await asyncio.sleep(5)
         if [game_id, player_id] not in list(manager.active_connections.values()):
-            if game_object.players[player_id]:
-                game_object.players.remove_player(player_id)
-                if not len(game_object.players):
+            if game.players[player_id]:
+                game.players.remove_player(player_id)
+                if not len(game.players):
                     logger.debug(
                         f"Deleting game {game_id} because thre are no players left")
                     del games[game_id]
                 else:
-                    await manager.broadcast_gamestate(game_object)
+                    await manager.broadcast_gamestate(game)
 
 
 @app.post("/create_game")
@@ -120,11 +120,11 @@ async def create_game(create_game_request: CreateGameRequest) -> dict:
     Returns:
         dict: {'game_id': str, 'player_id': str} representing the game and player IDs.
     """
-    game_object = Game()
+    game = Game()
     player_name = create_game_request.player_name
-    games[game_object.game_id] = game_object
-    player_id = game_object.players.add_player(player_name)
-    return JSONResponse(content={"game_id": game_object.game_id, "player_id": player_id}, status_code=status.HTTP_201_CREATED)
+    games[game.game_id] = game
+    player_id = game.players.add_player(player_name)
+    return JSONResponse(content={"game_id": game.game_id, "player_id": player_id}, status_code=status.HTTP_201_CREATED)
 
 
 @app.post("/join_game")
@@ -140,24 +140,24 @@ async def join_game(join_id_request: JoinGameRequest) -> Union[dict, None]:
     Raises:
         HTTPException: If game is not found, game has already started or game is full
     """
-    game_object = games.get(join_id_request.game_id)
+    game = games.get(join_id_request.game_id)
     player_name = join_id_request.player_name
 
-    if game_object is None:
+    if game is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Game not found")
 
-    if game_object.state != GameState.LOBBY:
+    if game.state != GameState.LOBBY:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,
                             detail="Game has already started")
 
-    if len(game_object.players) >= 10:
+    if len(game.players) >= 10:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Game is full")
 
-    player_id = game_object.players.add_player(player_name)
-    await manager.broadcast_gamestate(game_object)
-    return JSONResponse(content={"game_id": game_object.game_id, "player_id": player_id}, status_code=status.HTTP_201_CREATED)
+    player_id = game.players.add_player(player_name)
+    await manager.broadcast_gamestate(game)
+    return JSONResponse(content={"game_id": game.game_id, "player_id": player_id}, status_code=status.HTTP_201_CREATED)
 
 
 @app.post("/start_game")
@@ -173,10 +173,10 @@ async def start_game(start_game_request: StartGameRequest) -> Union[bool, None]:
     Raises:
         HTTPException: If the game, number of players or host player are invalid for starting the game
     """
-    game_object = games.get(start_game_request.game_id)
+    game = games.get(start_game_request.game_id)
 
-    if game_object.start_game(start_game_request.player_id):
-        await manager.broadcast_gamestate(game_object)
+    if game.start_game(start_game_request.player_id):
+        await manager.broadcast_gamestate(game)
         return JSONResponse(content={"detail": "Game started", "started": True}, status_code=status.HTTP_200_OK)
     else:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
@@ -187,22 +187,21 @@ async def start_game(start_game_request: StartGameRequest) -> Union[bool, None]:
 async def admin_stats():
     """Retrieves the statistics for the admin page."""
     game_stats = []
-    for game_id, game_object in games.items():
-        players = {player_id: player_object.name for player_id,
-                   player_object in game_object.players.items()}
+    for game_id, game in games.items():
+        players = {player_id: player.name for player_id,
+                   player in game.players.items()}
         game_stats.append({
             "gameId": game_id,
             "players": players,
             "host": list(players.keys())[0],
-            "currentPlayerIndex": game_object.players.current_player_index,
-            "currentPlayerId": game_object.players.current_player_id,
-            "deckLength": len(game_object.deck.cards),
-            "discardLength": len(game_object.deck.discard_pile),
-            "discardTop": game_object.deck.discard_pile[-1].face_value if len(game_object.deck.discard_pile) else None,
-            "gameDirection": game_object.direction,
-            "gameFlip": game_object.deck.flip,
-            "gameStarted": str(game_object.state.value),
-            "playerScores": (player_object.score for player_id, player_object in game_object.players.items())
+            "currentPlayerIndex": game.players.current_player_index,
+            "currentPlayerId": game.players.current_player_id,
+            "deckLength": len(game.deck.cards),
+            "discardLength": len(game.deck.discard_pile),
+            "gameDirection": game.direction,
+            "gameFlip": game.deck.flip,
+            "gameStarted": str(game.state.value),
+            "playerScores": (player.score for player_id, player in game.players.items())
         })
 
     websocket_stats = {}
