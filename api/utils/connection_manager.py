@@ -71,3 +71,15 @@ class ConectionManager:
         for connection, [conn_game_id, conn_player_id] in self.active_connections.items():
             if conn_game_id == game.game_id:
                 await connection.send_json(game.get_game_state(conn_player_id))
+
+    async def broadcast(self, game: Game, message: str):
+        """Method to broadcast a message to all websockets in a game.
+
+        Args:
+            game (Game): The game object to broadcast
+            message (str): The message to broadcast
+        """
+        logger.debug(f"Broadcasting message for game {game.game_id}")
+        for connection, [conn_game_id, conn_player_id] in self.active_connections.items():
+            if conn_game_id == game.game_id:
+                await connection.send_json({"type": "message", "message": message})

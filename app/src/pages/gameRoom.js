@@ -59,7 +59,49 @@ export default function GameRoom() {
   }
 }
 
-const Lobby = ({ lobbyData: { playerNames, isHost, gameId, playerId, name } }) => {
+function Chat({ lobbyData: { playerName, ws } }) {
+  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState([]);
+
+  const handleMessageChange = (event) => {
+    setMessage(event.target.value);
+  };
+
+  const handleSendMessage = (event) => {
+    event.preventDefault();
+    if (message.trim() !== "") {
+      ws.send(JSON.stringify({ type: "message", message: `${playerName}: ${message}` }));
+      setMessage("");
+    }
+  };
+
+  useEffect(() => {
+    ws.addEventListener("message", function(event) {
+      const data = JSON.parse(event.data);
+      if (data.type === "message") {
+        setMessages((prevMessages) => [...prevMessages, data.message]);
+        const messageDisplayBox = document.getElementById("messageDisplayBox");
+        messageDisplayBox.scrollTop = messageDisplayBox.scrollHeight;
+      }
+    });
+  }, [ws]);
+
+  return (
+    <div>
+      <div id="messageDisplayBox">
+        {messages.map((message, index) => (
+          <p key={index}>{message}</p>
+        ))}
+      </div>
+      <form id="inputContainer">
+        <input type="text" value={message} onChange={handleMessageChange} />
+        <button onClick={handleSendMessage}>Send</button>
+      </form>
+    </div>
+  );
+}
+
+const Lobby = ({ lobbyData, lobbyData: { playerNames, isHost, gameId, playerId, name } }) => {
   const startGame = () => {
     const requestbody = {
       game_id: gameId,
@@ -77,6 +119,7 @@ const Lobby = ({ lobbyData: { playerNames, isHost, gameId, playerId, name } }) =
 
   return (
     <>
+      <Chat lobbyData={lobbyData} />
       <div id="lobbyContainer">
         <h1>Game Lobby<br />{name}</h1>
         <div>
@@ -101,7 +144,7 @@ const Lobby = ({ lobbyData: { playerNames, isHost, gameId, playerId, name } }) =
   );
 };
 
-function Game({ lobbyData: { discard, playerHand, isTurn, unoCalled, ws } }) {
+function Game({ lobbyData, lobbyData: { discard, playerHand, isTurn, unoCalled, ws } }) {
   const pickCard = () => {
     ws.send(
       JSON.stringify({
@@ -120,6 +163,7 @@ function Game({ lobbyData: { discard, playerHand, isTurn, unoCalled, ws } }) {
 
   return (
     <div id="gameContainer">
+      <Chat lobbyData={lobbyData} />
       <div id="discardContainer">
         <div style={{ backgroundColor: discard.colour }} className="card">
           {discard.action}

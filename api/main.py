@@ -81,6 +81,9 @@ async def lobby(websocket: WebSocket, game_id: int, player_id: str):
         while True:
             message = await websocket.receive_json()
 
+            if message["type"] == "message":
+                await manager.broadcast(game, message["message"])
+
             if game.state == GameState.GAME:
                 if message["type"] == "play_card":
                     if game.play_card(player_id, int(message["index"]), message["wildColour"]):
@@ -103,7 +106,7 @@ async def lobby(websocket: WebSocket, game_id: int, player_id: str):
             if game.players[player_id]:
                 game.players.remove_player(player_id)
                 if not len(game.players):
-                    logger.debug(
+                    logger.info(
                         f"Deleting game {game_id} because thre are no players left")
                     del games[game_id]
                 else:

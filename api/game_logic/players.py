@@ -60,6 +60,7 @@ class Players:
             if self.current_player_index >= len(self.players)-1:
                 self.current_player_index = 0
 
+        # TODO: RESET WILD CARDS COLOUR
         self.game.deck.cards += player.hand
         del self.players[player_id]
 
