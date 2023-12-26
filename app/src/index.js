@@ -9,8 +9,8 @@ import CreateGameForm from "./pages/createGame.js";
 import GameRoom from "./pages/gameRoom.js";
 import AdminStats from "./pages/adminStats.js";
 
-const apiUrl = "http://127.0.0.1:8000";
-const webSocketUrl = "ws://127.0.0.1:8000";
+const apiUrl = "http://192.168.0.231:8000";
+const webSocketUrl = "ws://192.168.0.231:8000";
 export { apiUrl, webSocketUrl};
 
 function App() {

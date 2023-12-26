@@ -9,10 +9,10 @@ Functions:
     connect: Method to connect a websocket to the connection manager.
     disconnect: Method to disconnect a websocket from the connection manager.
     broadcast_gamestate: Method to broadcast the game state to all websockets in a game.
+    broadcast_message: Method to broadcast a message to all websockets in a game.
 """
 
 from fastapi import WebSocket
-from typing import Dict
 
 from game_logic.game import Game
 from utils.custom_logger import CustomLogger
@@ -32,7 +32,7 @@ class ConectionManager:
 
         Initializes the active_connections attribute as an empty dictionary.
         """
-        self.active_connections: Dict[WebSocket, list] = {}
+        self.active_connections: dict[WebSocket, list] = {}
 
     async def connect(self, websocket: WebSocket, game_id: int, player_id: str):
         """Method to connect a websocket to the connection manager.
@@ -72,7 +72,7 @@ class ConectionManager:
             if conn_game_id == game.game_id:
                 await connection.send_json(game.get_game_state(conn_player_id))
 
-    async def broadcast(self, game: Game, message: str):
+    async def broadcast_message(self, game: Game, message: str):
         """Method to broadcast a message to all websockets in a game.
 
         Args:

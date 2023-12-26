@@ -4,9 +4,9 @@ This module contains the Deck class, representing a deck of cards used in a game
 The Deck class manages the cards, deals hands, and handles discards for the specified game.
 """
 
-import copy
 from random import choice
 
+from cards import Card, FlipCard
 
 class Deck:
     """Represents a deck of cards used in a game.
@@ -24,7 +24,7 @@ class Deck:
         pick_card(): Picks a card from the deck, reshuffling if necessary.
     """
 
-    def __init__(self, game, cards) -> None:
+    def __init__(self, game, card_builder):
         """Initialize the Deck.
 
         Args:
@@ -33,40 +33,27 @@ class Deck:
         self.game = game
         self.flip = 0
         self.discard_pile = []
-        self.cards = copy.deepcopy(cards)
+        self.cards = card_builder(self)
 
-        # Pass the deck instance to each card
-        for card in self.cards:
-            # Assign the deck instance to each card
-            card.deck = self
-
-    def deal_hand(self) -> list:
+    def deal(self, cards: int = 7) -> list[Card | FlipCard]:
         """Deal a hand of 7 cards from the deck.
 
         Returns:
             list: A list of cards representing the hand dealt.
         """
-        hand = [self.pick_card() for _ in range(7)]
+        hand = [self.pick_card() for _ in range(cards)]
         return hand
 
-    def place_card(self, card) -> None:
-        """Place a card onto the discard pile.
-
-        Args:
-            card (Card): The card to be placed onto the discard pile.
-        """
-        self.discard_pile.append(card)
-        card.behaviour()
-
-    def pick_card(self):
+    def pick_card(self) -> Card | FlipCard:
         """Pick a card from the deck, reshuffling if necessary.
 
         Returns:
-            Card: The card picked from the deck as an object.
+            Card | FlipCard: The card picked from the deck as an object.
         """
         # Check if the deck is empty
         if not self.cards:
             # Moves cards from discard pile to the deck, except the last card
+            # TODO: reset wild card colours
             self.cards = self.discard_pile[:-1]
             self.discard_pile = [self.discard_pile[-1]]
 
@@ -74,11 +61,3 @@ class Deck:
         card = choice(self.cards)
         self.cards.remove(card)
         return card
-
-    def __str__(self) -> str:
-        """Return a string representation of the deck.
-
-        Returns:
-            str: A string representation of the deck.
-        """
-        return f"{self.game} deck with {len(self.cards)} cards remaining."

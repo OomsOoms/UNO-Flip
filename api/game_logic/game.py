@@ -3,11 +3,11 @@
 from enum import Enum
 from random import randint
 
-from cards import game_modes
+from cards import Type, Colour, game_modes
 from utils.custom_logger import CustomLogger
 
 from .deck import Deck
-from .players import Players
+from .players import Players, Bot
 
 logger = CustomLogger(__name__)
 
@@ -30,18 +30,17 @@ class Game:
         self.game_id = randint(100000, 999999)
         logger.info(f"Creating game {self.game_id}")
 
+
         game_mode = game_modes["uno_flip"]
         self.name = game_mode["name"]
-        self.wild_colours = game_mode["wild_colours"]
-
-        self.deck = Deck(self, game_mode["cards"])
+        self.deck = Deck(self, game_mode["card_builder"])
         self.players = Players(self)
         self.state = GameState.LOBBY
         self.direction = 1  # clockwise: 1, anti-clockwise: -1
         self.prerequisite_func = lambda self: logger.debug(
             f"Running default prerequisite_func for game {self.game_id}")
 
-    def start_game(self, player_id: str) -> None:
+    def start_game(self, player_id: str):
         """Starts the game.
 
         The game can only be started by the host player, and only if there are at least 2 players in the game.
@@ -58,8 +57,8 @@ class Game:
             while True:
                 card = self.deck.pick_card()
                 self.deck.discard_pile.append(card)
-                if card.__class__.__name__ == "Number":
-                    logger.debug(f"Start card {card.colour} {card.action}")
+                if card.type == Type.NUMBER:
+                    logger.debug(f"Start card {card.colour} {card.action_name}")
                     break
 
             return True
@@ -75,11 +74,11 @@ class Game:
         player = self.players[player_id]
         card = player.hand[card_index]
 
-        if card.is_playable() and player_id == self.players.current_player_id:
+        if card.is_playable(self.deck) and player_id == self.players.current_player_id:
             # Check if the card is a wild card and set the colour
             if not card.colour:
-                if wild_colour in self.wild_colours.colours(self):
-                    card.colour = wild_colour
+                if wild_colour in [colour.value for colour in Colour.colours(self.deck)]:
+                    card.colour = Colour[wild_colour.upper()]
                 else:
                     return
 
@@ -106,7 +105,7 @@ class Game:
             self.end_turn()
             return True
 
-    def end_turn(self) -> None:
+    def end_turn(self):
         """This method handles the end of a player's turn in the game.
 
         It checks for various conditions such as winning, updates player scores,
@@ -116,7 +115,7 @@ class Game:
 
         # Check if the current player has an empty hand/has won the game
         if len(player.hand) == 0:
-            logger.info(f"Game won by {self.players.current_player_id}")
+            logger.info(f"Game({self.game_id}) won by {self.players.current_player_id}")
 
             # Update player scores based on remaining cards in hands
             for player_id, opponent in self.players.items():
@@ -130,11 +129,13 @@ class Game:
         logger.debug(f"Ending {self.players.current_player_id}'s turn")
         self.players.increment_turn()
 
+        # START OF NEXT TURN
+
         # Execute prerequisite_func after incrementing the turn, then reset it
         self.prerequisite_func(self)
         self.prerequisite_func = lambda self: logger.debug(
             f"Running default prerequisite_func for game {self.game_id}")
-
+        
     def call_uno(self, player_id):
         """Calls Uno for the player.
 
@@ -161,20 +162,28 @@ class Game:
             dict: A dict containing the game state for the player that requested it,
             this data changes depending one the game state.
         """
-        discard = {
-            "colour": self.deck.discard_pile[-1].colour,
-            "action": self.deck.discard_pile[-1].action,
-        } if self.deck.discard_pile else None
         player = self.players[player_id]
         player_names = [player.name for player in self.players.values()]
+        logger.debug([str(card) for card in player.hand])
         player_hand = [
             {
-                "colour": card.colour,
-                "action": card.action,
-                "isPlayable": card.is_playable() and player_id == self.players.current_player_id
+                "colour": card.colour.value if card.colour else None,
+                "action": card.action_name,
+                "isPlayable": card.is_playable(self.deck) and player_id == self.players.current_player_id
             }
             for card in player.hand
         ]
+
+        # if the discard pile is empty then the discard is None
+        if discard := self.deck.discard_pile[-1] if self.deck.discard_pile else None:
+            discard = {
+                # Wild cards with the colour None can appear
+                "colour": discard.colour.value if discard.colour else None,
+                "action": discard.action_name,
+            }
+        else:
+            discard = {"colour": None, "action": None}
+
         return {
             "type": self.state.value,
             "name": self.name,
@@ -182,7 +191,7 @@ class Game:
             "discard": discard,
             "currentPlayerName": self.players.current_player.name,
             "playerNames": player_names,
-            "wildColours": self.wild_colours.colours(self),
+            "wildColours": [colour.value for colour in Colour.colours(self.deck)],
 
             "playerId": player_id,
             "playerName": self.players[player_id].name,
