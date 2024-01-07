@@ -19,8 +19,14 @@ export default function GameRoom() {
     ws.onopen = () => {
       console.log("WebSocket connection opened");
     };
-    ws.onclose = () => {
+    ws.onclose = (event) => {
       console.log("WebSocket connection disconnected");
+      console.log("Reason:", event.reason);
+      console.log("Code:", event.code);
+      // 1012 is the code for the server shutting down
+      if (event.code === 1012) {
+        window.location.href = "/";
+      }
     };
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);

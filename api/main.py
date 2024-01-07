@@ -101,7 +101,12 @@ async def lobby(websocket: WebSocket, game_id: int, player_id: str):
                         status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid message type")
 
     # Only runs when an authenticated websocket disconnects
-    except WebSocketDisconnect:
+    except WebSocketDisconnect as e:
+
+        # If the websocket is closed by the server, don't do anything
+        if e.code == 1012:
+            return
+
         manager.disconnect(websocket)
         # Wait 5 seconds to see if the player reconnects
         await asyncio.sleep(5)
