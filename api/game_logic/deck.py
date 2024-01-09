@@ -6,7 +6,7 @@ The Deck class manages the cards, deals hands, and handles discards for the spec
 
 from random import choice
 
-from cards import Card, FlipCard
+from cards import Card, FlipCard, build_uno_cards
 
 class Deck:
     """Represents a deck of cards used in a game.
@@ -24,16 +24,15 @@ class Deck:
         pick_card(): Picks a card from the deck, reshuffling if necessary.
     """
 
-    def __init__(self, game, card_builder):
+    def __init__(self):
         """Initialize the Deck.
 
         Args:
             game (str): The name of the game.
         """
-        self.game = game
         self.flip = 0
         self.discard_pile = []
-        self.cards = card_builder(self)
+        self.cards = []
 
     def deal(self, cards: int = 7) -> list[Card | FlipCard]:
         """Deal a hand of 7 cards from the deck.

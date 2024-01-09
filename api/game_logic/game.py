@@ -3,11 +3,11 @@
 from enum import Enum
 from random import randint
 
-from cards import Type, Colour, game_modes
+from cards import Type, Colour, build_uno_cards, build_flip_cards
 from utils.custom_logger import CustomLogger
 
 from .deck import Deck
-from .players import Players, Bot
+from .players import Players
 
 logger = CustomLogger(__name__)
 
@@ -26,19 +26,40 @@ class GameState(Enum):
 class Game:
 
     def __init__(self) -> None:
-        """Initialises a game of UNO."""
+        """Initialises a game of UNO.
+
+        This is the default game configuration, but the user can change the settings when the game starts
+        using the `start_game` method.
+
+        Game Settings:
+        - direction: The direction of play (1 for clockwise, -1 for counterclockwise).
+        - hand_size: The number of cards each player starts with.
+        - flip: The number of cards to draw when a flip card is played.
+        - game_mode: The game mode (e.g., "uno").
+        - name: The name of the game.
+
+        Game State:
+        - game_id: The unique ID of the game.
+        - deck: The deck of cards.
+        - players: The players in the game.
+        - state: The current state of the game.
+        - prerequisite_func: The function to be executed before each turn.
+        """
+        # Inital Game settings
+        self.direction = 1
+        self.hand_size = 7
+        self.game_mode = "uno"
+        self.name = "UNO"
+
+        # Game state
         self.game_id = randint(100000, 999999)
-        logger.info(f"Creating game {self.game_id}")
-
-
-        game_mode = game_modes["uno_flip"]
-        self.name = game_mode["name"]
-        self.deck = Deck(self, game_mode["card_builder"])
+        self.deck = Deck()
         self.players = Players(self)
         self.state = GameState.LOBBY
-        self.direction = 1  # clockwise: 1, anti-clockwise: -1
         self.prerequisite_func = lambda self: logger.debug(
             f"Running default prerequisite_func for game {self.game_id}")
+        
+        logger.info(f"Created game: {self.game_id}")
 
     def start_game(self, player_id: str):
         """Starts the game.
@@ -51,9 +72,21 @@ class Game:
         logger.info(f"Starting game {self.game_id}")
 
         if self.state == GameState.LOBBY and list(self.players.keys())[0] == player_id and len(self.players) >= 2:
+            # Set the game state to GAME and select a random player to start
             self.state = GameState.GAME
             self.players.current_player_index = randint(0, len(self.players)-1)
 
+            # Build the deck of cards
+            # TODO: do this better
+            # TODO: also deal with cases where the deck runs out of cards
+            self.deck.flip = 0
+            self.deck.cards = {"uno": build_uno_cards, "flip": build_flip_cards}[self.game_mode](self.deck)
+
+            # Deal hands to players
+            for player in self.players.values():
+                player.assign_hand(self.hand_size)
+
+            # Pick a card from the deck to start the discard pile
             while True:
                 card = self.deck.pick_card()
                 self.deck.discard_pile.append(card)
@@ -61,6 +94,19 @@ class Game:
                     logger.debug(f"Start card {card.colour} {card.action_name}")
                     break
 
+            return True
+
+    def pick_card(self, player_id) -> bool:
+        """Picks a card from the deck for the player.
+
+        Args:
+            player_id (str): The ID of the player who is picking a card.
+        """
+        if player_id == self.players.current_player_id:
+            logger.debug(f"Selecting card for {player_id}")
+            # Pick a card from the deck and add it to the player's hand
+            self.players[player_id].hand.append(self.deck.pick_card())
+            self.end_turn()
             return True
 
     def play_card(self, player_id: str, card_index: int, wild_colour: str) -> bool:
@@ -89,19 +135,6 @@ class Game:
             self.players[player_id].hand.remove(card)
             self.deck.discard_pile.append(card)
             self.prerequisite_func = card.behaviour
-            self.end_turn()
-            return True
-
-    def pick_card(self, player_id) -> bool:
-        """Picks a card from the deck for the player.
-
-        Args:
-            player_id (str): The ID of the player who is picking a card.
-        """
-        if player_id == self.players.current_player_id:
-            logger.debug(f"Selecting card for {player_id}")
-            # Pick a card from the deck and add it to the player's hand
-            self.players[player_id].hand.append(self.deck.pick_card())
             self.end_turn()
             return True
 
@@ -135,21 +168,6 @@ class Game:
         self.prerequisite_func(self)
         self.prerequisite_func = lambda self: logger.debug(
             f"Running default prerequisite_func for game {self.game_id}")
-        
-    def call_uno(self, player_id):
-        """Calls Uno for the player.
-
-        Args:
-            player_id (int): The ID of the player who is calling Uno.   
-        """
-
-        # if the current player calls uno and has 1 card left nothing happpens
-        # if any player calls uno and the current player has already called uno they draw 2 cards
-        # if any player calls uno and the current player has more than 1 card left they draw 2 cards
-        # if no one calls uno they have until the next player plays their turn to call uno
-        # uno must still be able to be called for the current player and also call out the last player if they missed uno call? not sure about this one
-
-        return False
 
     def get_game_state(self, player_id: str) -> dict:
         """Returns the current state of the game for a given player,
@@ -164,7 +182,7 @@ class Game:
         """
         player = self.players[player_id]
         player_names = [player.name for player in self.players.values()]
-        logger.debug([str(card) for card in player.hand])
+
         player_hand = [
             {
                 "colour": card.colour.value if card.colour else None,

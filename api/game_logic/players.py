@@ -2,7 +2,7 @@ from uuid import uuid4
 
 from utils.custom_logger import CustomLogger
 
-from cards import Type, Colour
+from cards import Type, Colour, Card, FlipCard
 
 logger = CustomLogger(__name__)
 
@@ -18,48 +18,21 @@ class Player:
     Properties:
         score (int): The score of the player's hand.
     """
+    hand: Card | FlipCard = []
 
     def __init__(self, name, game):
         self.name = name
         self.id = str(uuid4())
         self.game = game
-        self.hand = game.deck.deal(7)
         self.score = 0
 
-    def get_player_hand(self) -> list:
-        """Returns the formatted hand of a player."""
-        player_hand = [
-            {
-                "colour": card.colour,
-                "action": card.action,
-                "isPlayable": card.is_playable() and self.id == self.game.players.current_player_id
-            }
-            for card in self.hand
-        ]
-        return player_hand
-    
-    
-class Bot(Player):
-    """Represents a bot in the game.
+    def assign_hand(self, hand_size):
+        """Assigns a hand of cards to the player.
 
-    Attributes:
-        name (str): The name of the bot.
-        game (Game): The game the bot is in.
-        hand (list): A list of cards in the bot's hand.
-
-    Properties:
-        score (int): The score of the bot's hand.
-    """
-
-    def __init__(self, name, game):
-        super().__init__(name, game)
-
-    def play(self):
-        """Makes the bot play a card."""
-        logger.info(f"Bot {self.name} is playing a card")
-        hand = self.get_player_hand()
-
-        logger.debug(f"Playable cards: {hand}")
+        Args:
+            hand_size (int): The number of cards to deal.
+        """
+        self.hand = self.game.deck.deal(hand_size)
 
 
 class Players:
@@ -86,11 +59,6 @@ class Players:
         player = Player(player_name, self.game)
         self.players[player.id] = player
         return player.id
-    
-    def add_bot(self, bot_name: str):
-        logger.info(f"Adding bot {bot_name} to game {self.game.game_id}")
-        bot = Bot(bot_name, self.game)
-        self.players[bot.id] = bot
 
     def remove_player(self, player_id: str) -> None:
         logger.info(f"Removing {player_id} from game {self.game.game_id}")
